@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { supabase } from '../lib/supabase'
 
@@ -88,6 +88,11 @@ export default function Navbar() {
     }
     load()
   }, [])
+
+  useEffect(() => {
+    document.body.style.overflow = menuOpen ? 'hidden' : ''
+    return () => { document.body.style.overflow = '' }
+  }, [menuOpen])
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-[110]"
@@ -189,7 +194,7 @@ export default function Navbar() {
           panels above backdrop at the same z-[100] — this is intentional. */}
       <AnimatePresence>
         {menuOpen && (
-          <>
+          <React.Fragment key="mobile-menu">
             {/* Backdrop */}
             <motion.div
               className="fixed inset-0 z-[100]"
@@ -279,7 +284,7 @@ export default function Navbar() {
                       <motion.a
                         href={social.instagram}
                         target="_blank"
-                        rel="noopener"
+                        rel="noopener noreferrer"
                         onClick={() => setMenuOpen(false)}
                         variants={linkItemVariants}
                         style={{
@@ -300,7 +305,7 @@ export default function Navbar() {
                       <motion.a
                         href={social.youtube}
                         target="_blank"
-                        rel="noopener"
+                        rel="noopener noreferrer"
                         onClick={() => setMenuOpen(false)}
                         variants={linkItemVariants}
                         style={{
@@ -348,7 +353,7 @@ export default function Navbar() {
               </motion.div>
 
             </div>
-          </>
+          </React.Fragment>
         )}
       </AnimatePresence>
     </nav>
