@@ -2,48 +2,14 @@ import React, { useState, useEffect } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { supabase } from '../lib/supabase'
 
-/* Nav link with orange hover-reveal text (matches Framer QB9PT component) */
-function NavLink({ href, label, target, rel }) {
-  const [hov, setHov] = useState(false)
-  return (
-    <a href={href} target={target} rel={rel}
-      onMouseEnter={() => setHov(true)}
-      onMouseLeave={() => setHov(false)}
-      className="relative block overflow-hidden"
-      style={{ textDecoration: 'none' }}>
-      {/* Default white text */}
-      <span className="block transition-transform duration-300"
-        style={{
-          fontFamily: '"Geist", sans-serif',
-          fontSize: '18px',
-          fontWeight: 500,
-          letterSpacing: '0.03em',
-          color: '#fff',
-          textDecoration: 'underline',
-          textDecorationOffset: '3px',
-          textDecorationThickness: '2px',
-          transform: hov ? 'translateY(-100%)' : 'translateY(0)',
-        }}>
-        {label}
-      </span>
-      {/* Orange hover text */}
-      <span className="absolute left-0 top-full block transition-transform duration-300"
-        style={{
-          fontFamily: '"Geist", sans-serif',
-          fontSize: '18px',
-          fontWeight: 500,
-          letterSpacing: '0.03em',
-          color: '#ff4d00',
-          textDecoration: 'underline',
-          textDecorationOffset: '3px',
-          textDecorationThickness: '2px',
-          transform: hov ? 'translateY(-100%)' : 'translateY(0)',
-        }}>
-        {label}
-      </span>
-    </a>
-  )
-}
+/*
+  Navbar — floating hamburger button (tablet/mobile only) + split-reveal overlay.
+
+  The full-width 3-column top bar (contact / brand / title+location) lives in
+  each page's own inline navbar — styled correctly for that page's background.
+  This component adds only the hamburger trigger and the fullscreen split panel
+  on top of every page, so navigation works on all breakpoints without doubling.
+*/
 
 const leftPanelVariants = {
   initial: { x: '-100%' },
@@ -67,7 +33,6 @@ const linkItemVariants = {
 }
 
 export default function Navbar() {
-  const [brand, setBrand] = useState(null)
   const [contact, setContact] = useState(null)
   const [social, setSocial] = useState(null)
   const [menuOpen, setMenuOpen] = useState(false)
@@ -77,10 +42,9 @@ export default function Navbar() {
       const { data } = await supabase
         .from('site_settings')
         .select('key, value')
-        .in('key', ['brand', 'contact', 'social'])
+        .in('key', ['contact', 'social'])
       if (data) {
         data.forEach(r => {
-          if (r.key === 'brand') setBrand(r.value)
           if (r.key === 'contact') setContact(r.value)
           if (r.key === 'social') setSocial(r.value)
         })
@@ -95,122 +59,46 @@ export default function Navbar() {
   }, [menuOpen])
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-[110]"
-      style={{
-        background: 'linear-gradient(180deg, rgba(0,0,0,0.25) 14.57%, rgba(0,0,0,0) 100%)',
-      }}>
-      <div className="w-full max-w-[1800px] mx-auto flex items-center justify-between"
-        style={{ padding: '20px 40px' }}>
-
-        {/* Left — Contact info (Desktop only) */}
-        <div className="hidden desktop:flex flex-col gap-0.5" style={{ minWidth: '200px' }}>
-          {contact && (
-            <>
-              <a href={`mailto:${contact.email}`}
-                style={{
-                  fontFamily: '"Geist", sans-serif',
-                  fontSize: '15px',
-                  fontWeight: 400,
-                  color: '#aaa',
-                  textDecoration: 'none',
-                  transition: 'color 0.2s',
-                }}
-                onMouseEnter={e => e.target.style.color = '#ff4d00'}
-                onMouseLeave={e => e.target.style.color = '#aaa'}>
-                {contact.email}
-              </a>
-              <a href={`tel:${contact.phone}`}
-                style={{
-                  fontFamily: '"Geist", sans-serif',
-                  fontSize: '13px',
-                  fontWeight: 400,
-                  color: '#606060',
-                  textDecoration: 'none',
-                }}>
-                {contact.phone}
-              </a>
-            </>
-          )}
+    <>
+      {/* ── Floating hamburger button — tablet/mobile only ── */}
+      <button
+        className="desktop:hidden fixed z-[110]"
+        style={{
+          top: '18px',
+          right: 'clamp(16px, 4vw, 40px)',
+          background: menuOpen ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.4)',
+          borderRadius: '10px',
+          border: 'none',
+          cursor: 'pointer',
+          minWidth: '44px',
+          minHeight: '44px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          transition: 'background 0.25s',
+          padding: '13px',
+        }}
+        onClick={() => setMenuOpen(!menuOpen)}>
+        <div style={{ width: '18px', height: '11px', position: 'relative', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+          <motion.span
+            style={{ display: 'block', height: '1px', background: '#fff', transformOrigin: 'center' }}
+            animate={menuOpen ? { rotate: 45, y: 5, width: 18 } : { rotate: 0, y: 0, width: 18 }}
+            transition={{ duration: 0.25, ease: 'easeInOut' }}
+          />
+          <motion.span
+            style={{ display: 'block', height: '1px', background: '#fff' }}
+            animate={menuOpen ? { opacity: 0 } : { opacity: 1 }}
+            transition={{ duration: 0.15 }}
+          />
+          <motion.span
+            style={{ display: 'block', height: '1px', background: '#fff', transformOrigin: 'center', width: 10 }}
+            animate={menuOpen ? { rotate: -45, y: -5, width: 18 } : { rotate: 0, y: 0, width: 10 }}
+            transition={{ duration: 0.25, ease: 'easeInOut' }}
+          />
         </div>
+      </button>
 
-        {/* Center — Logo / Brand name */}
-        <a href="#hero" style={{ textDecoration: 'none' }}>
-          <span style={{
-            fontFamily: '"Geist", sans-serif',
-            fontSize: '22px',
-            fontWeight: 600,
-            letterSpacing: '0.05em',
-            color: '#fff',
-          }}>
-            {brand?.name || 'SHRAVAN'}
-          </span>
-        </a>
-
-        {/* Right — Title + Location (Desktop only) */}
-        <div className="hidden desktop:flex flex-col items-end gap-0.5" style={{ minWidth: '200px' }}>
-          {brand && (
-            <>
-              <span style={{
-                fontFamily: '"Geist", sans-serif',
-                fontSize: '15px',
-                fontWeight: 400,
-                color: '#aaa',
-              }}>
-                {brand.title}
-              </span>
-              <span style={{
-                fontFamily: '"Geist", sans-serif',
-                fontSize: '13px',
-                fontWeight: 400,
-                color: '#606060',
-              }}>
-                {brand.location}
-              </span>
-            </>
-          )}
-        </div>
-
-        {/* Mobile menu button (Phone only) */}
-        <button
-          className="desktop:hidden flex items-center justify-center"
-          style={{
-            background: menuOpen ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.4)',
-            borderRadius: '10px',
-            border: 'none',
-            cursor: 'pointer',
-            minWidth: '44px',
-            minHeight: '44px',
-            transition: 'background 0.25s',
-            padding: '13px',
-          }}
-          onClick={() => setMenuOpen(!menuOpen)}>
-          <div style={{ width: '18px', height: '11px', position: 'relative', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-            <motion.span
-              style={{ display: 'block', height: '1px', background: '#fff', transformOrigin: 'center' }}
-              animate={menuOpen
-                ? { rotate: 45, y: 5, width: 18 }
-                : { rotate: 0, y: 0, width: 18 }}
-              transition={{ duration: 0.25, ease: 'easeInOut' }}
-            />
-            <motion.span
-              style={{ display: 'block', height: '1px', background: '#fff' }}
-              animate={menuOpen ? { opacity: 0 } : { opacity: 1 }}
-              transition={{ duration: 0.15 }}
-            />
-            <motion.span
-              style={{ display: 'block', height: '1px', background: '#fff', transformOrigin: 'center', width: 10 }}
-              animate={menuOpen
-                ? { rotate: -45, y: -5, width: 18 }
-                : { rotate: 0, y: 0, width: 10 }}
-              transition={{ duration: 0.25, ease: 'easeInOut' }}
-            />
-          </div>
-        </button>
-      </div>
-
-      {/* Mobile fullscreen split-reveal menu */}
-      {/* Note: backdrop and panels container are siblings (not nested). DOM order stacks
-          panels above backdrop at the same z-[100] — this is intentional. */}
+      {/* ── Fullscreen split-reveal menu ── */}
       <AnimatePresence>
         {menuOpen && (
           <React.Fragment key="mobile-menu">
@@ -248,8 +136,6 @@ export default function Navbar() {
                   PAGES
                 </p>
                 <motion.div variants={linkContainerVariants} animate="animate" initial="initial">
-                  {/* About is intentionally omitted — matches the existing mobile menu which
-                      never included it. The About page is accessible via /about directly. */}
                   {[
                     { label: 'Home',      href: '/'          },
                     { label: 'Portfolio', href: '/portfolio'  },
@@ -375,6 +261,6 @@ export default function Navbar() {
           </React.Fragment>
         )}
       </AnimatePresence>
-    </nav>
+    </>
   )
-} 
+}

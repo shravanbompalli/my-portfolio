@@ -249,7 +249,7 @@ export default function ProjectDetailPage() {
         padding: '20px 40px', borderBottom: '1px solid rgba(0,0,0,0.06)',
         position: 'sticky', top: 0, zIndex: 50, backgroundColor: '#f5f5f5',
       }}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', minWidth: '180px' }}>
+        <div className="nav-contact" style={{ display: 'flex', flexDirection: 'column', gap: '2px', minWidth: '180px' }}>
           {contact && <>
             <a href={`mailto:${contact.email}`} style={{ fontFamily: '"Geist",sans-serif', fontSize: '14px', color: '#404040', textDecoration: 'none' }}>{contact.email}</a>
             <span style={{ fontFamily: '"Geist",sans-serif', fontSize: '12px', color: '#aaa' }}>{contact.phone}</span>
@@ -260,7 +260,7 @@ export default function ProjectDetailPage() {
             ✦ {brand?.name || 'SHRAVAN'}
           </span>
         </Link>
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px', minWidth: '180px' }}>
+        <div className="nav-info" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px', minWidth: '180px' }}>
           <span style={{ fontFamily: '"Geist",sans-serif', fontSize: '14px', color: '#404040' }}>{brand?.title || 'Cinematographer'}</span>
           <span style={{ fontFamily: '"Geist",sans-serif', fontSize: '12px', color: '#aaa' }}>{brand?.location || 'Hyderabad, India'}</span>
         </div>
