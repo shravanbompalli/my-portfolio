@@ -23,6 +23,9 @@ const imgSpring = { type: 'spring', stiffness: 40, damping: 10, mass: 2 }
 
 export default function TestimonialHighlight() {
   const [t, setT] = useState(null)
+  const [isMobile, setIsMobile] = useState(
+    typeof window !== 'undefined' ? window.matchMedia('(max-width: 809px)').matches : false
+  )
 
   useEffect(() => {
     async function load() {
@@ -34,6 +37,13 @@ export default function TestimonialHighlight() {
       if (data) setT(data.value)
     }
     load()
+  }, [])
+
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 809px)')
+    const handler = (e) => setIsMobile(e.matches)
+    mq.addEventListener('change', handler)
+    return () => mq.removeEventListener('change', handler)
   }, [])
 
   if (!t) return null
@@ -73,13 +83,13 @@ export default function TestimonialHighlight() {
         >
           {/* Quote */}
           <motion.blockquote
-            initial={{ opacity: 0, y: 80, scale: 0.96 }}
-            whileInView={{ opacity: 1, y: 0, scale: 1 }}
-            viewport={{ once: true, amount: 0.1 }}
-            transition={{ ...spring, delay: 0 }}
+            initial={{ opacity: 0, y: 40 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.3 }}
+            transition={{ type: 'spring', stiffness: 60, damping: 14, mass: 0.8 }}
             style={{
               fontFamily: '"Geist", sans-serif',
-              fontSize: 'clamp(24px, 3.8vw, 48px)',
+              fontSize: isMobile ? 'clamp(22px, 6vw, 36px)' : 'clamp(24px, 3.8vw, 48px)',
               fontWeight: 500,
               lineHeight: 1.3,
               letterSpacing: '-0.02em',
@@ -170,10 +180,10 @@ export default function TestimonialHighlight() {
         >
           {/* Image 2 — landscape, LEFT — fades in after Image 1 */}
           <motion.div
-            initial={{ opacity: 0, y: 60, rotate: -2 }}
-            whileInView={{ opacity: 1, y: 0, rotate: 0 }}
-            viewport={{ once: true, amount: 0.1 }}
-            transition={{ ...imgSpring, delay: 0.4 }}
+            initial={{ opacity: 0, scale: 0.95 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true, amount: 0.2 }}
+            transition={{ type: 'spring', stiffness: 60, damping: 14, mass: 0.8, delay: 0.25 }}
             style={{
               flex: '1 1 45%', aspectRatio: '3 / 4', borderRadius: '12px',
               overflow: 'hidden', backgroundColor: '#e0dcd8', alignSelf: 'flex-end',
@@ -200,14 +210,14 @@ export default function TestimonialHighlight() {
 
           {/* Image 1 — tall portrait, RIGHT, overlaps hero — ANIMATED: rises up slowly */}
           <motion.div
-            initial={{ opacity: 0, y: 200, rotate: 3, scale: 0.9 }}
-            whileInView={{ opacity: 1, y: 0, rotate: 0, scale: 1 }}
-            viewport={{ once: true, amount: 0.05 }}
-            transition={{ ...imgSpring, delay: 0 }}
+            initial={{ opacity: 0, scale: 0.95 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true, amount: 0.2 }}
+            transition={{ type: 'spring', stiffness: 60, damping: 14, mass: 0.8, delay: 0.1 }}
             style={{
               flex: '1 1 55%', aspectRatio: '3 / 4.5', borderRadius: '12px',
               overflow: 'hidden', backgroundColor: '#e8e4e0',
-              marginTop: 'clamp(-120px, -12vw, -60px)',
+              marginTop: isMobile ? 0 : 'clamp(-120px, -12vw, -60px)',
             }}
           >
             {t.image_1 ? (
