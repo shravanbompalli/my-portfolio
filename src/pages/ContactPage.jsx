@@ -141,6 +141,7 @@ export default function ContactPage() {
 
           {/* Left — Info */}
           <motion.div
+            className="contact-info-panel"
             initial={{ opacity: 0, x: -40 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ ...spring, delay: 0.1 }}
@@ -203,6 +204,7 @@ export default function ContactPage() {
 
           {/* Right — Form */}
           <motion.div
+            className="contact-form-panel"
             initial={{ opacity: 0, x: 40 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ ...spring, delay: 0.2 }}
@@ -319,6 +321,16 @@ export default function ContactPage() {
           .page-right-nav { display: none !important; }
           .nav-contact, .nav-info { display: none !important; }
           .contact-grid { flex-direction: column !important; }
+          .contact-info-panel {
+            min-width: 0 !important;
+            width: 100% !important;
+            flex: 1 1 100% !important;
+          }
+          .contact-form-panel {
+            min-width: 0 !important;
+            width: 100% !important;
+            flex: 1 1 100% !important;
+          }
         }
         input::placeholder, textarea::placeholder { color: rgba(255,255,255,0.3); }
       `}</style>
