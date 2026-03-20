@@ -34,7 +34,7 @@ export default function PortfolioPage() {
       {/* ── Navbar ── */}
       <div style={{
         display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start',
-        padding: '20px 40px', borderBottom: '1px solid rgba(0,0,0,0.06)',
+        padding: 'clamp(12px, 4vw, 20px) clamp(16px, 5vw, 40px)', borderBottom: '1px solid rgba(0,0,0,0.06)',
       }}>
         <div className="nav-contact" style={{ display: 'flex', flexDirection: 'column', gap: '2px', minWidth: '180px' }}>
           {contact && <>

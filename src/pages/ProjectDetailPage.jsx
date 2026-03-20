@@ -246,7 +246,7 @@ export default function ProjectDetailPage() {
       {/* ── Navbar ── */}
       <div style={{
         display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start',
-        padding: '20px 40px', borderBottom: '1px solid rgba(0,0,0,0.06)',
+        padding: 'clamp(12px, 4vw, 20px) clamp(16px, 5vw, 40px)', borderBottom: '1px solid rgba(0,0,0,0.06)',
         position: 'sticky', top: 0, zIndex: 50, backgroundColor: '#f5f5f5',
       }}>
         <div className="nav-contact" style={{ display: 'flex', flexDirection: 'column', gap: '2px', minWidth: '180px' }}>
@@ -267,7 +267,7 @@ export default function ProjectDetailPage() {
       </div>
 
       {/* ── Back link ── */}
-      <div style={{ maxWidth: '1400px', margin: '0 auto', padding: '24px 40px 0' }}>
+      <div style={{ maxWidth: '1400px', margin: '0 auto', padding: '24px clamp(16px, 5vw, 40px) 0' }}>
         <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={spring}>
           <Link to="/portfolio"
             style={{ fontFamily: '"Geist",sans-serif', fontSize: '14px', fontWeight: 500, color: '#606060', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '6px', transition: 'color 0.3s' }}
@@ -282,7 +282,7 @@ export default function ProjectDetailPage() {
       </div>
 
       {/* ── Hero Cover Image ── */}
-      <div style={{ maxWidth: '1400px', margin: '0 auto', padding: '24px 40px' }}>
+      <div style={{ maxWidth: '1400px', margin: '0 auto', padding: '24px clamp(16px, 5vw, 40px)' }}>
         <motion.div
           initial={{ opacity: 0, y: 60, scale: 0.96 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -305,7 +305,7 @@ export default function ProjectDetailPage() {
       </div>
 
       {/* ── Project Info ── */}
-      <div style={{ maxWidth: '1400px', margin: '0 auto', padding: '40px 40px 60px' }}>
+      <div style={{ maxWidth: '1400px', margin: '0 auto', padding: '40px clamp(16px, 5vw, 40px) 60px' }}>
         <div className="project-info-grid" style={{ display: 'flex', gap: '60px' }}>
           <motion.div
             initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }}
@@ -359,7 +359,7 @@ export default function ProjectDetailPage() {
 
       {/* ── Gallery Videos ── */}
       {videos.length > 0 && (
-        <div style={{ maxWidth: '1400px', margin: '0 auto', padding: '0 40px 60px' }}>
+        <div style={{ maxWidth: '1400px', margin: '0 auto', padding: '0 clamp(16px, 5vw, 40px) 60px' }}>
           <motion.h3
             initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }} transition={spring}
@@ -388,11 +388,11 @@ export default function ProjectDetailPage() {
 
       {/* ── Gallery Images ── */}
       {gallery.length > 0 && (
-        <div style={{ maxWidth: project.image_display_style === 'circular' ? '100%' : '1400px', margin: '0 auto', padding: project.image_display_style === 'circular' ? '0 0 80px' : '0 40px 80px' }}>
+        <div style={{ maxWidth: project.image_display_style === 'circular' ? '100%' : '1400px', margin: '0 auto', padding: project.image_display_style === 'circular' ? '0 0 80px' : '0 clamp(16px, 5vw, 40px) 80px' }}>
           <motion.h3
             initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }} transition={spring}
-            style={{ fontFamily: '"Geist",sans-serif', fontSize: '13px', fontWeight: 500, color: '#aaa', margin: '0 0 24px', textTransform: 'uppercase', letterSpacing: '0.1em', padding: project.image_display_style === 'circular' ? '0 40px' : '0' }}
+            style={{ fontFamily: '"Geist",sans-serif', fontSize: '13px', fontWeight: 500, color: '#aaa', margin: '0 0 24px', textTransform: 'uppercase', letterSpacing: '0.1em', padding: project.image_display_style === 'circular' ? '0 clamp(16px, 5vw, 40px)' : '0' }}
           >Project Gallery</motion.h3>
 
           {project.image_display_style === 'circular' ? (
@@ -450,7 +450,7 @@ export default function ProjectDetailPage() {
 
       {/* ── Next / Prev ── */}
       <div style={{
-        maxWidth: '1400px', margin: '0 auto', padding: '40px 40px 80px',
+        maxWidth: '1400px', margin: '0 auto', padding: '40px clamp(16px, 5vw, 40px) 80px',
         display: 'flex', justifyContent: 'space-between', alignItems: 'center',
         borderTop: '1px solid rgba(0,0,0,0.1)',
       }}>

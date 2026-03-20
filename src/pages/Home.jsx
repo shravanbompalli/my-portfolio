@@ -176,7 +176,7 @@ export default function Home() {
             </div>
             <div style={{ opacity: loaded ? 1 : 0, transform: loaded ? 'translateY(0)' : 'translateY(60px)', transition: 'all 0.8s ease 0.4s' }}>
               <h1 style={{
-                fontFamily: '"Geist",sans-serif', fontSize: 'clamp(48px,12vw,156px)', fontWeight: 700,
+                fontFamily: '"Geist",sans-serif', fontSize: isMobile ? 'clamp(22px, 10vw, 48px)' : 'clamp(48px,12vw,156px)', fontWeight: 700,
                 letterSpacing: '-0.04em', lineHeight: '100%', color: '#fff', mixBlendMode: 'difference', margin: 0,
               }}>
                 {hero?.headline || 'CINEMATOGRAPHER'}

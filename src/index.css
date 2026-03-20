@@ -24,6 +24,10 @@ body {
   overflow-x: hidden;
 }
 
+html {
+  overflow-x: hidden;
+}
+
 ::selection {
   background: var(--accent);
   color: var(--bg);
