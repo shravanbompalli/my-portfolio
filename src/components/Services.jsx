@@ -114,6 +114,7 @@ export default function Services() {
                     justifyContent: 'space-between',
                     padding: 'clamp(16px, 2.5vw, 28px) 0',
                     cursor: 'pointer',
+                    minHeight: '44px',
                   }}
                 >
                   <div style={{ display: 'flex', alignItems: 'flex-start', gap: 'clamp(16px, 3vw, 32px)' }}>
@@ -213,6 +214,7 @@ export default function Services() {
               This is ONE element that persists and smoothly transitions.
               The image src crossfades, the position follows mouse with spring. */}
           <motion.div
+            className="services-floating-image"
             style={{
               position: 'absolute',
               left: smoothX,
@@ -273,6 +275,12 @@ export default function Services() {
           </motion.div>
         </div>
       </div>
+      <style>{`
+        .services-floating-image { display: block; }
+        @media (max-width: 809px) {
+          .services-floating-image { display: none !important; }
+        }
+      `}</style>
     </section>
   )
 }
