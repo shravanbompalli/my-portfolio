@@ -174,7 +174,7 @@ export default function Portfolio({ limit }) {
 
       <style>{`
         @media (max-width: 809px) {
-          .portfolio-grid { grid-template-columns: 1fr !important; }
+          .portfolio-grid { columns: 1 !important; }
         }
       `}</style>
     </section>
