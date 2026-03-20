@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+import Navbar from '../components/Navbar'
 import TestimonialHighlight from '../components/TestimonialHighlight'
 import AboutText from '../components/AboutText'
 import Services from '../components/Services'
@@ -44,6 +45,17 @@ export default function Home() {
   const [loaded, setLoaded] = useState(false)
   const dataLoaded = useRef(false)
 
+  const [isMobile, setIsMobile] = useState(
+    typeof window !== 'undefined' && window.innerWidth < 810
+  )
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 809px)')
+    const handler = (e) => setIsMobile(e.matches)
+    mq.addEventListener('change', handler)
+    setIsMobile(mq.matches)
+    return () => mq.removeEventListener('change', handler)
+  }, [])
+
   useEffect(() => {
     if (dataLoaded.current) return
     dataLoaded.current = true
@@ -68,6 +80,7 @@ export default function Home() {
 
   return (
     <div>
+      <Navbar />
       {/* ══════════════ SECTION 1: HERO ══════════════ */}
       <section style={{
         position: 'relative', width: '100%', height: '100vh',
@@ -102,29 +115,7 @@ export default function Home() {
         </div>
 
         <div style={{ position: 'absolute', inset: 0, zIndex: 2, display: 'flex', flexDirection: 'column' }}>
-          <div style={{
-            display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start',
-            padding: '20px 40px',
-            background: 'linear-gradient(180deg, rgba(0,0,0,0.25) 14.57%, transparent 100%)',
-          }}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', minWidth: '180px' }}>
-              {contact && <>
-                <a href={`mailto:${contact.email}`} style={{ fontFamily: '"Geist",sans-serif', fontSize: '14px', color: '#ddd', textDecoration: 'none' }}>{contact.email}</a>
-                <span style={{ fontFamily: '"Geist",sans-serif', fontSize: '12px', color: '#888' }}>{contact.phone}</span>
-              </>}
-            </div>
-            <Link to="/" style={{ textDecoration: 'none' }}>
-              <span style={{ fontFamily: '"Geist",sans-serif', fontSize: '20px', fontWeight: 600, color: '#fff', letterSpacing: '0.05em' }}>
-                ✦ {brand?.name || 'SHRAVAN'}
-              </span>
-            </Link>
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px', minWidth: '180px' }}>
-              <span style={{ fontFamily: '"Geist",sans-serif', fontSize: '14px', color: '#ddd' }}>{brand?.title || 'Cinematographer'}</span>
-              <span style={{ fontFamily: '"Geist",sans-serif', fontSize: '12px', color: '#888' }}>{brand?.location || 'Hyderabad, India'}</span>
-            </div>
-          </div>
-
-          <div style={{ flex: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 40px' }}>
+          <div style={{ flex: 1, display: isMobile ? 'none' : 'flex', justifyContent: 'space-between', alignItems: 'center', padding: isMobile ? '0 clamp(16px, 5vw, 40px)' : '0 40px' }}>
             <div style={{
               opacity: loaded ? 1 : 0, transform: loaded ? 'translateY(0)' : 'translateY(20px)',
               transition: 'all 0.6s ease 0.7s',
@@ -157,7 +148,7 @@ export default function Home() {
             </nav>
           </div>
 
-          <div style={{ padding: '0 40px' }}>
+          <div style={{ padding: isMobile ? '0 clamp(16px, 5vw, 40px)' : '0 40px' }}>
             <div style={{ opacity: loaded ? 1 : 0, transform: loaded ? 'translateY(0)' : 'translateY(40px)', transition: 'all 0.8s ease 0.6s', marginBottom: '8px' }}>
               <p style={{ fontFamily: '"Geist",sans-serif', fontSize: 'clamp(18px,2.5vw,28px)', fontWeight: 500, color: '#eee', letterSpacing: '-0.01em', margin: 0 }}>
                 {hero?.tagline || 'Award-winning creative'}
@@ -173,8 +164,8 @@ export default function Home() {
             </div>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'stretch', opacity: loaded ? 1 : 0, transform: loaded ? 'translateY(0)' : 'translateY(-40px)', transition: 'all 0.6s ease 0.8s' }}>
-            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '8px', padding: '16px 40px', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+          <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: 'stretch', opacity: loaded ? 1 : 0, transform: loaded ? 'translateY(0)' : 'translateY(-40px)', transition: 'all 0.6s ease 0.8s' }}>
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '8px', padding: isMobile ? '12px 16px' : '16px 40px', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
               {social?.instagram && (
                 <a href={social.instagram} target="_blank" rel="noopener" style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#fff', textDecoration: 'none', fontFamily: '"Geist",sans-serif', fontSize: '15px' }}><Arrow /> Instagram</a>
               )}
@@ -182,12 +173,12 @@ export default function Home() {
                 <a href={social.youtube} target="_blank" rel="noopener" style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#fff', textDecoration: 'none', fontFamily: '"Geist",sans-serif', fontSize: '15px' }}><Arrow /> YouTube</a>
               )}
             </div>
-            <div style={{ flex: 1, padding: '16px 24px', borderTop: '1px solid rgba(255,255,255,0.05)', borderLeft: '1px solid rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center' }}>
+            <div style={{ flex: 1, padding: isMobile ? '12px 16px' : '16px 24px', borderTop: '1px solid rgba(255,255,255,0.05)', borderLeft: isMobile ? 'none' : '1px solid rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center' }}>
               <p style={{ fontFamily: '"Geist",sans-serif', fontSize: '14px', color: '#aaa', lineHeight: 1.5, maxWidth: '280px', margin: 0 }}>
                 {hero?.subtext || 'Capturing timeless moments that tell stories of emotion, beauty, and truth in every frame and every pose.'}
               </p>
             </div>
-            <div style={{ flex: 1, padding: '16px 40px', borderTop: '1px solid rgba(255,255,255,0.05)', borderLeft: '1px solid rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '8px' }}>
+            <div style={{ flex: 1, padding: isMobile ? '12px 16px' : '16px 40px', borderTop: '1px solid rgba(255,255,255,0.05)', borderLeft: isMobile ? 'none' : '1px solid rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: isMobile ? 'flex-start' : 'flex-end', gap: '8px' }}>
               <span style={{ fontSize: '24px' }}>🏆</span>
               <div>
                 <p style={{ fontFamily: '"Geist",sans-serif', fontSize: '15px', fontWeight: 500, color: '#fff', margin: 0 }}>{awards?.name || 'Hasselblad Award'}</p>
