@@ -181,14 +181,15 @@ export default function Navbar() {
             minWidth: '44px',
             minHeight: '44px',
             transition: 'background 0.25s',
+            padding: '13px',
           }}
           onClick={() => setMenuOpen(!menuOpen)}>
           <div style={{ width: '18px', height: '11px', position: 'relative', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
             <motion.span
               style={{ display: 'block', height: '1px', background: '#fff', transformOrigin: 'center' }}
               animate={menuOpen
-                ? { rotate: 45, y: 5, width: '18px' }
-                : { rotate: 0, y: 0, width: '18px' }}
+                ? { rotate: 45, y: 5, width: 18 }
+                : { rotate: 0, y: 0, width: 18 }}
               transition={{ duration: 0.25, ease: 'easeInOut' }}
             />
             <motion.span
@@ -197,10 +198,10 @@ export default function Navbar() {
               transition={{ duration: 0.15 }}
             />
             <motion.span
-              style={{ display: 'block', height: '1px', background: '#fff', transformOrigin: 'center' }}
+              style={{ display: 'block', height: '1px', background: '#fff', transformOrigin: 'center', width: 10 }}
               animate={menuOpen
-                ? { rotate: -45, y: -5, width: '18px' }
-                : { rotate: 0, y: 0, width: '10px' }}
+                ? { rotate: -45, y: -5, width: 18 }
+                : { rotate: 0, y: 0, width: 10 }}
               transition={{ duration: 0.25, ease: 'easeInOut' }}
             />
           </div>
