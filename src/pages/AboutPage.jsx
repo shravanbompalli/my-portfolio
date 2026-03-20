@@ -106,7 +106,7 @@ export default function AboutPage() {
             fontFamily: '"Geist",sans-serif', fontSize: 'clamp(40px, 10vw, 130px)', fontWeight: 700,
             letterSpacing: '-0.04em', lineHeight: 1, color: '#000', margin: 0,
           }}>ABOUT</h1>
-          <div style={{
+          <div className="headline-inline-image" style={{
             width: 'clamp(60px, 12vw, 160px)', height: 'clamp(45px, 8vw, 110px)',
             borderRadius: '8px', overflow: 'hidden', backgroundColor: '#ddd',
             margin: '0 8px', flexShrink: 0,
@@ -117,6 +117,22 @@ export default function AboutPage() {
             fontFamily: '"Geist",sans-serif', fontSize: 'clamp(40px, 10vw, 130px)', fontWeight: 700,
             letterSpacing: '-0.04em', lineHeight: 1, color: '#000', margin: 0,
           }}>ME</h1>
+        </motion.div>
+
+        {/* ── Mobile headline image (hidden on tablet+desktop) ── */}
+        <motion.div
+          className="headline-mobile-image"
+          initial={{ opacity: 0, y: 30, scale: 0.95 }}
+          whileInView={{ opacity: 1, y: 0, scale: 1 }}
+          viewport={{ once: true, amount: 0.3 }}
+          transition={{ type: 'spring', stiffness: 60, damping: 14, mass: 0.8 }}
+        >
+          <div style={{
+            width: '100%', height: '200px',
+            borderRadius: '8px', overflow: 'hidden', backgroundColor: '#ddd',
+          }}>
+            <div style={{ width: '100%', height: '100%', background: 'linear-gradient(135deg,#d0c8c0,#b0a8a0)' }} />
+          </div>
         </motion.div>
 
         <motion.div
@@ -155,10 +171,17 @@ export default function AboutPage() {
       </div>
 
       <style>{`
+        .headline-mobile-image { display: none; }
         @media (max-width: 809px) {
           .page-right-nav { display: none !important; }
           .nav-contact, .nav-info { display: none !important; }
           .hero-headline { justify-content: center !important; }
+          .headline-inline-image { display: none !important; }
+          .headline-mobile-image {
+            display: block;
+            margin-top: 20px;
+            margin-bottom: 8px;
+          }
         }
         @media (min-width: 810px) and (max-width: 1279px) {
           .page-right-nav { right: 20px !important; }
