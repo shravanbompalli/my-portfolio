@@ -85,11 +85,16 @@ export default function Footer() {
         </div>
 
         {/* CTA Content */}
-        <div style={{
-          position: 'relative', zIndex: 2,
-          maxWidth: '1400px', margin: '0 auto',
-          padding: 'clamp(100px, 14vw, 200px) clamp(18px, 4vw, 40px) clamp(80px, 10vw, 140px)',
-        }}>
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.2 }}
+          transition={{ type: 'spring', stiffness: 60, damping: 14, mass: 0.8 }}
+          style={{
+            position: 'relative', zIndex: 2,
+            maxWidth: '1400px', margin: '0 auto',
+            padding: 'clamp(100px, 14vw, 200px) clamp(18px, 4vw, 40px) clamp(80px, 10vw, 140px)',
+          }}>
           {/* Heading */}
           <motion.div
             initial={{ opacity: 0, y: 60 }}
@@ -158,7 +163,7 @@ export default function Footer() {
               </Link>
             </motion.div>
           </motion.div>
-        </div>
+        </motion.div>
       </section>
 
       {/* ══════════ ACTUAL FOOTER ══════════ */}
@@ -211,10 +216,11 @@ export default function Footer() {
 
             {/* RIGHT — Nav columns + Stats */}
             <motion.div
-              initial={{ opacity: 0, x: 30 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: false }}
-              transition={{ ...spring, delay: 0.2 }}
+              className="footer-nav-columns"
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, amount: 0.2 }}
+              transition={{ type: 'spring', stiffness: 60, damping: 14, mass: 0.8, delay: 0.1 }}
               style={{
                 flex: '1 1 55%',
                 display: 'flex', gap: 'clamp(40px, 5vw, 80px)',
@@ -289,6 +295,13 @@ export default function Footer() {
       <style>{`
         @media (max-width: 809px) {
           .footer-grid { flex-direction: column !important; }
+          .footer-nav-columns {
+            flex-direction: column !important;
+            gap: clamp(20px, 4vw, 32px) !important;
+          }
+          .footer-grid {
+            gap: clamp(20px, 4vw, 40px) !important;
+          }
         }
       `}</style>
     </>
