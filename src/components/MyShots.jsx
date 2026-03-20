@@ -9,7 +9,7 @@ const spring = { type: 'spring', stiffness: 70, damping: 12, mass: 0.8 }
   MagneticCard — 3D tilt card that follows cursor
   Creates a premium interactive feel where cards tilt toward your mouse
 */
-function MagneticCard({ children, i }) {
+function MagneticCard({ children, i, isMobile }) {
   const ref = useRef(null)
   const mouseX = useMotionValue(0)
   const mouseY = useMotionValue(0)
@@ -20,6 +20,7 @@ function MagneticCard({ children, i }) {
   const rotateY = useSpring(useTransform(mouseX, [-0.5, 0.5], [-8, 8]), { stiffness: 150, damping: 20 })
 
   function handleMouse(e) {
+    if (isMobile) return
     if (!ref.current) return
     const rect = ref.current.getBoundingClientRect()
     const x = (e.clientX - rect.left) / rect.width - 0.5
@@ -48,7 +49,7 @@ function MagneticCard({ children, i }) {
   return (
     <motion.div
       ref={ref}
-      initial={{
+      initial={isMobile ? { opacity: 0, y: 30 } : {
         opacity: 0,
         y: dir.y,
         x: dir.x,
@@ -56,7 +57,7 @@ function MagneticCard({ children, i }) {
         scale: 0.85,
         filter: 'blur(8px)',
       }}
-      whileInView={{
+      whileInView={isMobile ? { opacity: 1, y: 0 } : {
         opacity: 1,
         y: 0,
         x: 0,
@@ -64,14 +65,17 @@ function MagneticCard({ children, i }) {
         scale: 1,
         filter: 'blur(0px)',
       }}
-      viewport={{ once: false, amount: 0.05 }}
-      transition={{
-        type: 'spring',
-        stiffness: 40 + (i % 3) * 10,
-        damping: 12,
-        mass: 1 + (i % 3) * 0.4,
-        delay: 0.06 * (i % 6),
-      }}
+      viewport={{ once: isMobile ? true : false, amount: 0.05 }}
+      transition={isMobile
+        ? { type: 'spring', stiffness: 60, damping: 14, mass: 0.8, delay: i * 0.06 }
+        : {
+          type: 'spring',
+          stiffness: 40 + (i % 3) * 10,
+          damping: 12,
+          mass: 1 + (i % 3) * 0.4,
+          delay: 0.06 * (i % 6),
+        }
+      }
       onMouseMove={handleMouse}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={handleLeave}
@@ -86,8 +90,8 @@ function MagneticCard({ children, i }) {
     >
       <motion.div
         style={{
-          rotateX,
-          rotateY,
+          rotateX: isMobile ? 0 : rotateX,
+          rotateY: isMobile ? 0 : rotateY,
           borderRadius: '12px',
           overflow: 'hidden',
           position: 'relative',
@@ -118,7 +122,7 @@ function MagneticCard({ children, i }) {
 /*
   ParallaxImage — image moves slightly on scroll for depth effect
 */
-function ParallaxImage({ src, alt, aspect, i, isHovered }) {
+function ParallaxImage({ src, alt, aspect, i, isHovered, isMobile }) {
   const ref = useRef(null)
   const { scrollYProgress } = useScroll({
     target: ref,
@@ -130,7 +134,7 @@ function ParallaxImage({ src, alt, aspect, i, isHovered }) {
   return (
     <div ref={ref} style={{ overflow: 'hidden' }}>
       <motion.div
-        style={{ y }}
+        style={{ y: isMobile ? 0 : y }}
         animate={{
           scale: isHovered ? 1.1 : 1.02,
           filter: isHovered ? 'saturate(1.1) brightness(1.02)' : 'saturate(1) brightness(1)',
@@ -207,6 +211,16 @@ export default function MyShots({ limit, title = 'See Through My Lens', subtitle
 }
 
 function ShotsSection({ shots, limit, title, subtitle, hasMore }) {
+  const [isMobile, setIsMobile] = useState(
+    typeof window !== 'undefined' ? window.matchMedia('(pointer: coarse)').matches : false
+  )
+  useEffect(() => {
+    const mq = window.matchMedia('(pointer: coarse)')
+    const handler = (e) => setIsMobile(e.matches)
+    mq.addEventListener('change', handler)
+    return () => mq.removeEventListener('change', handler)
+  }, [])
+
   return (
     <section
       style={{
@@ -303,7 +317,7 @@ function ShotsSection({ shots, limit, title, subtitle, hasMore }) {
         {/* ── Masonry grid with MagneticCards + Parallax ── */}
         <div className="shots-grid" style={{ columns: '3', columnGap: 'clamp(12px, 2vw, 20px)' }}>
           {shots.map((shot, i) => (
-            <MagneticCard key={shot.id} i={i}>
+            <MagneticCard key={shot.id} i={i} isMobile={isMobile}>
               {(isHovered) => (
                 <>
                   <ParallaxImage
@@ -312,12 +326,13 @@ function ShotsSection({ shots, limit, title, subtitle, hasMore }) {
                     aspect={shot.aspect_ratio}
                     i={i}
                     isHovered={isHovered}
+                    isMobile={isMobile}
                   />
 
                   {/* Hover overlay — slides up with blur backdrop */}
                   <motion.div
                     animate={{
-                      opacity: isHovered ? 1 : 0,
+                      opacity: isHovered ? (isMobile ? 0.85 : 1) : (isMobile ? 0.85 : 0),
                       y: isHovered ? 0 : 15,
                     }}
                     transition={{ duration: 0.3, ease: 'easeOut' }}
@@ -421,7 +436,7 @@ function ShotsSection({ shots, limit, title, subtitle, hasMore }) {
       </div>
 
       <style>{`
-        @media (max-width: 809px) { .shots-grid { columns: 2 !important; } }
+        @media (max-width: 809px) { .shots-grid { columns: 1 !important; } }
         @media (max-width: 480px) { .shots-grid { columns: 1 !important; } }
       `}</style>
     </section>
