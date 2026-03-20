@@ -27,6 +27,16 @@ function NavLink({ to, label }) {
 export default function MyShotsPage() {
   const [brand, setBrand] = useState(null)
   const [contact, setContact] = useState(null)
+  const [isMobile, setIsMobile] = useState(
+    typeof window !== 'undefined' ? window.matchMedia('(max-width: 809px)').matches : false
+  )
+
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 809px)')
+    const handler = (e) => setIsMobile(e.matches)
+    mq.addEventListener('change', handler)
+    return () => mq.removeEventListener('change', handler)
+  }, [])
 
   useEffect(() => {
     async function load() {
@@ -51,7 +61,7 @@ export default function MyShotsPage() {
       {/* ── Navbar ── */}
       <div style={{
         display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start',
-        padding: '20px 40px', borderBottom: '1px solid rgba(0,0,0,0.06)',
+        padding: isMobile ? 'clamp(12px, 4vw, 20px) clamp(16px, 5vw, 40px)' : '20px 40px', borderBottom: '1px solid rgba(0,0,0,0.06)',
       }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', minWidth: '180px' }}>
           {contact && <>
@@ -103,7 +113,7 @@ export default function MyShotsPage() {
               fontFamily: '"Geist",sans-serif', fontSize: 'clamp(48px,10vw,130px)', fontWeight: 700,
               letterSpacing: '-0.04em', lineHeight: 1, color: '#000', margin: 0,
             }}>MY</h1>
-            <div style={{
+            <div className="headline-inline-image" style={{
               width: 'clamp(80px,14vw,180px)', height: 'clamp(60px,8vw,110px)',
               borderRadius: '8px', overflow: 'hidden', backgroundColor: '#ddd', margin: '0 8px',
             }}>
@@ -113,6 +123,22 @@ export default function MyShotsPage() {
               fontFamily: '"Geist",sans-serif', fontSize: 'clamp(48px,10vw,130px)', fontWeight: 700,
               letterSpacing: '-0.04em', lineHeight: 1, color: '#000', margin: 0,
             }}>SHOTS</h1>
+          </motion.div>
+
+          {/* ── Mobile headline image (hidden on tablet+desktop) ── */}
+          <motion.div
+            className="headline-mobile-image"
+            initial={{ opacity: 0, y: 30, scale: 0.95 }}
+            whileInView={{ opacity: 1, y: 0, scale: 1 }}
+            viewport={{ once: true, amount: 0.3 }}
+            transition={{ type: 'spring', stiffness: 60, damping: 14, mass: 0.8 }}
+          >
+            <div style={{
+              width: '100%', height: '200px',
+              borderRadius: '8px', overflow: 'hidden', backgroundColor: '#ddd',
+            }}>
+              <div style={{ width: '100%', height: '100%', background: 'linear-gradient(135deg,#b8c8d8,#90a0b0)' }} />
+            </div>
           </motion.div>
 
           <motion.div
@@ -151,7 +177,19 @@ export default function MyShotsPage() {
       <Footer />
 
       <style>{`
-        @media (max-width: 809px) { .page-right-nav { display: none !important; } }
+        .headline-mobile-image { display: none; }
+        @media (max-width: 809px) {
+          .page-right-nav { display: none !important; }
+          .headline-inline-image { display: none !important; }
+          .headline-mobile-image {
+            display: block;
+            margin-top: 20px;
+            margin-bottom: 8px;
+          }
+        }
+        @media (min-width: 810px) and (max-width: 1279px) {
+          .page-right-nav { right: 20px !important; }
+        }
       `}</style>
     </div>
   )
