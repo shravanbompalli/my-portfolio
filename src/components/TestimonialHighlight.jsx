@@ -83,10 +83,10 @@ export default function TestimonialHighlight() {
         >
           {/* Quote */}
           <motion.blockquote
-            initial={{ opacity: 0, y: 40 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, amount: 0.3 }}
-            transition={{ type: 'spring', stiffness: 60, damping: 14, mass: 0.8 }}
+            initial={isMobile ? { opacity: 0, y: 40 } : { opacity: 0, y: 80, scale: 0.96 }}
+            whileInView={isMobile ? { opacity: 1, y: 0 } : { opacity: 1, y: 0, scale: 1 }}
+            viewport={{ once: true, amount: isMobile ? 0.3 : 0.1 }}
+            transition={isMobile ? { type: 'spring', stiffness: 60, damping: 14, mass: 0.8 } : { ...spring, delay: 0 }}
             style={{
               fontFamily: '"Geist", sans-serif',
               fontSize: isMobile ? 'clamp(22px, 6vw, 36px)' : 'clamp(24px, 3.8vw, 48px)',
@@ -180,10 +180,10 @@ export default function TestimonialHighlight() {
         >
           {/* Image 2 — landscape, LEFT — fades in after Image 1 */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            whileInView={{ opacity: 1, scale: 1 }}
+            initial={isMobile ? { opacity: 0, scale: 0.95 } : { opacity: 0, y: 60, rotate: -2 }}
+            whileInView={isMobile ? { opacity: 1, scale: 1 } : { opacity: 1, y: 0, rotate: 0 }}
             viewport={{ once: true, amount: 0.2 }}
-            transition={{ type: 'spring', stiffness: 60, damping: 14, mass: 0.8, delay: 0.25 }}
+            transition={isMobile ? { type: 'spring', stiffness: 60, damping: 14, mass: 0.8, delay: 0.25 } : { ...imgSpring, delay: 0.4 }}
             style={{
               flex: '1 1 45%', aspectRatio: '3 / 4', borderRadius: '12px',
               overflow: 'hidden', backgroundColor: '#e0dcd8', alignSelf: 'flex-end',
@@ -210,10 +210,10 @@ export default function TestimonialHighlight() {
 
           {/* Image 1 — tall portrait, RIGHT, overlaps hero — ANIMATED: rises up slowly */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            whileInView={{ opacity: 1, scale: 1 }}
-            viewport={{ once: true, amount: 0.2 }}
-            transition={{ type: 'spring', stiffness: 60, damping: 14, mass: 0.8, delay: 0.1 }}
+            initial={isMobile ? { opacity: 0, scale: 0.95 } : { opacity: 0, y: 200, rotate: 3, scale: 0.9 }}
+            whileInView={isMobile ? { opacity: 1, scale: 1 } : { opacity: 1, y: 0, rotate: 0, scale: 1 }}
+            viewport={{ once: true, amount: isMobile ? 0.2 : 0.05 }}
+            transition={isMobile ? { type: 'spring', stiffness: 60, damping: 14, mass: 0.8, delay: 0.1 } : { ...imgSpring, delay: 0 }}
             style={{
               flex: '1 1 55%', aspectRatio: '3 / 4.5', borderRadius: '12px',
               overflow: 'hidden', backgroundColor: '#e8e4e0',
