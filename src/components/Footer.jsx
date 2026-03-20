@@ -294,13 +294,13 @@ export default function Footer() {
 
       <style>{`
         @media (max-width: 809px) {
-          .footer-grid { flex-direction: column !important; }
+          .footer-grid {
+            flex-direction: column !important;
+            gap: clamp(20px, 4vw, 40px) !important;
+          }
           .footer-nav-columns {
             flex-direction: column !important;
             gap: clamp(20px, 4vw, 32px) !important;
-          }
-          .footer-grid {
-            gap: clamp(20px, 4vw, 40px) !important;
           }
         }
       `}</style>
