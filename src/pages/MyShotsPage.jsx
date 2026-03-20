@@ -63,7 +63,7 @@ export default function MyShotsPage() {
         display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start',
         padding: isMobile ? 'clamp(12px, 4vw, 20px) clamp(16px, 5vw, 40px)' : '20px 40px', borderBottom: '1px solid rgba(0,0,0,0.06)',
       }}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', minWidth: '180px' }}>
+        <div className="nav-contact" style={{ display: 'flex', flexDirection: 'column', gap: '2px', minWidth: '180px' }}>
           {contact && <>
             <a href={`mailto:${contact.email}`} style={{ fontFamily: '"Geist",sans-serif', fontSize: '14px', color: '#404040', textDecoration: 'none' }}>{contact.email}</a>
             <span style={{ fontFamily: '"Geist",sans-serif', fontSize: '12px', color: '#aaa' }}>{contact.phone}</span>
@@ -74,7 +74,7 @@ export default function MyShotsPage() {
             ✦ {brand?.name || 'SHRAVAN'}
           </span>
         </Link>
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px', minWidth: '180px' }}>
+        <div className="nav-info" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px', minWidth: '180px' }}>
           <span style={{ fontFamily: '"Geist",sans-serif', fontSize: '14px', color: '#404040' }}>{brand?.title || 'Cinematographer'}</span>
           <span style={{ fontFamily: '"Geist",sans-serif', fontSize: '12px', color: '#aaa' }}>{brand?.location || 'Hyderabad, India'}</span>
         </div>
@@ -180,6 +180,8 @@ export default function MyShotsPage() {
         .headline-mobile-image { display: none; }
         @media (max-width: 809px) {
           .page-right-nav { display: none !important; }
+          .nav-contact { display: none !important; }
+          .nav-info { display: none !important; }
           .headline-inline-image { display: none !important; }
           .headline-mobile-image {
             display: block;
