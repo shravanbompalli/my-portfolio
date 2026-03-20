@@ -68,7 +68,7 @@ export default function Navbar() {
   }, [])
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50"
+    <nav className="fixed top-0 left-0 right-0 z-[110]"
       style={{
         background: 'linear-gradient(180deg, rgba(0,0,0,0.25) 14.57%, rgba(0,0,0,0) 100%)',
       }}>
@@ -76,7 +76,7 @@ export default function Navbar() {
         style={{ padding: '20px 40px' }}>
 
         {/* Left — Contact info (Desktop only) */}
-        <div className="hidden md:flex flex-col gap-0.5" style={{ minWidth: '200px' }}>
+        <div className="hidden desktop:flex flex-col gap-0.5" style={{ minWidth: '200px' }}>
           {contact && (
             <>
               <a href={`mailto:${contact.email}`}
@@ -120,7 +120,7 @@ export default function Navbar() {
         </a>
 
         {/* Right — Title + Location (Desktop only) */}
-        <div className="hidden md:flex flex-col items-end gap-0.5" style={{ minWidth: '200px' }}>
+        <div className="hidden desktop:flex flex-col items-end gap-0.5" style={{ minWidth: '200px' }}>
           {brand && (
             <>
               <span style={{
@@ -145,13 +145,15 @@ export default function Navbar() {
 
         {/* Mobile menu button (Phone only) */}
         <button
-          className="md:hidden flex flex-col items-center justify-center"
+          className="desktop:hidden flex flex-col items-center justify-center"
           style={{
             background: 'rgba(0,0,0,0.4)',
             borderRadius: '10px',
-            padding: '12px',
+            padding: '13px',
             border: 'none',
             cursor: 'pointer',
+            minWidth: '44px',
+            minHeight: '44px',
           }}
           onClick={() => setMenuOpen(!menuOpen)}>
           <span style={{ display: 'block', width: '18px', height: '1px', background: '#fff', marginBottom: '4px' }} />
@@ -162,7 +164,7 @@ export default function Navbar() {
 
       {/* Mobile fullscreen menu */}
       {menuOpen && (
-        <div className="md:hidden fixed inset-0 z-[100] flex flex-col"
+        <div className="fixed inset-0 z-[100] flex flex-col"
           style={{ backgroundColor: 'rgba(0,0,0,0.97)', backdropFilter: 'blur(12px)' }}>
 
           {/* Close button */}
