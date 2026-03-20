@@ -118,7 +118,7 @@ export default function Home() {
             padding: isMobile ? 'clamp(12px, 4vw, 20px) clamp(16px, 5vw, 40px)' : '20px 40px',
             background: 'linear-gradient(180deg, rgba(0,0,0,0.25) 14.57%, transparent 100%)',
           }}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', minWidth: '180px' }}>
+            <div className="hero-nav-contact" style={{ display: 'flex', flexDirection: 'column', gap: '2px', minWidth: '180px' }}>
               {contact && <>
                 <a href={`mailto:${contact.email}`} style={{ fontFamily: '"Geist",sans-serif', fontSize: '14px', color: '#ddd', textDecoration: 'none' }}>{contact.email}</a>
                 <span style={{ fontFamily: '"Geist",sans-serif', fontSize: '12px', color: '#888' }}>{contact.phone}</span>
@@ -129,7 +129,7 @@ export default function Home() {
                 ✦ {brand?.name || 'SHRAVAN'}
               </span>
             </Link>
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px', minWidth: '180px' }}>
+            <div className="hero-nav-info" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px', minWidth: '180px' }}>
               <span style={{ fontFamily: '"Geist",sans-serif', fontSize: '14px', color: '#ddd' }}>{brand?.title || 'Cinematographer'}</span>
               <span style={{ fontFamily: '"Geist",sans-serif', fontSize: '12px', color: '#888' }}>{brand?.location || 'Hyderabad, India'}</span>
             </div>
@@ -231,6 +231,13 @@ export default function Home() {
 
       {/* ══════════════ SECTION 7: FOOTER CTA ══════════════ */}
       <Footer />
+
+      <style>{`
+        @media (max-width: 1279px) {
+          .hero-nav-contact { display: none !important; }
+          .hero-nav-info { display: none !important; }
+        }
+      `}</style>
     </div>
   )
 }

@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom'
 import { useState, useEffect, useRef } from 'react'
 import CustomCursor from './components/CustomCursor'
+import Navbar from './components/Navbar'
 import LoadingAnimation from './components/LoadingAnimation'
 import Home from './pages/Home'
 import PortfolioPage from './pages/PortfolioPage'
@@ -199,6 +200,7 @@ export default function App() {
 
       <BrowserRouter>
         <CustomCursor />
+        <Navbar />
         <PageTransitions />
       </BrowserRouter>
     </>
