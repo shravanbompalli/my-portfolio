@@ -333,7 +333,7 @@ function ShotsSection({ shots, limit, title, subtitle, hasMore }) {
                   <motion.div
                     animate={{
                       opacity: isHovered ? (isMobile ? 0.85 : 1) : (isMobile ? 0.85 : 0),
-                      y: isHovered ? 0 : 15,
+                      y: (isMobile || isHovered) ? 0 : 15,
                     }}
                     transition={{ duration: 0.3, ease: 'easeOut' }}
                     style={{
@@ -437,7 +437,6 @@ function ShotsSection({ shots, limit, title, subtitle, hasMore }) {
 
       <style>{`
         @media (max-width: 809px) { .shots-grid { columns: 1 !important; } }
-        @media (max-width: 480px) { .shots-grid { columns: 1 !important; } }
       `}</style>
     </section>
   )
