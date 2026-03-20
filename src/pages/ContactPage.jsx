@@ -249,8 +249,9 @@ export default function ContactPage() {
                   <motion.div
                     key={field.key}
                     initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ ...spring, delay: 0.3 + fi * 0.1 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true, amount: 0.5 }}
+                    transition={{ type: 'spring', stiffness: 60, damping: 14, mass: 0.8, delay: fi * 0.08 }}
                   >
                     <label style={{ fontFamily: '"Geist",sans-serif', fontSize: '14px', fontWeight: 500, color: '#fff', display: 'block', marginBottom: '8px' }}>
                       {field.label}
@@ -271,8 +272,9 @@ export default function ContactPage() {
 
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ ...spring, delay: 0.5 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, amount: 0.5 }}
+                  transition={{ type: 'spring', stiffness: 60, damping: 14, mass: 0.8, delay: 0.16 }}
                 >
                   <label style={{ fontFamily: '"Geist",sans-serif', fontSize: '14px', fontWeight: 500, color: '#fff', display: 'block', marginBottom: '8px' }}>
                     Your message*
