@@ -172,20 +172,38 @@ export default function Navbar() {
 
         {/* Mobile menu button (Phone only) */}
         <button
-          className="desktop:hidden flex flex-col items-center justify-center"
+          className="desktop:hidden flex items-center justify-center"
           style={{
-            background: 'rgba(0,0,0,0.4)',
+            background: menuOpen ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.4)',
             borderRadius: '10px',
-            padding: '13px',
             border: 'none',
             cursor: 'pointer',
             minWidth: '44px',
             minHeight: '44px',
+            transition: 'background 0.25s',
           }}
           onClick={() => setMenuOpen(!menuOpen)}>
-          <span style={{ display: 'block', width: '18px', height: '1px', background: '#fff', marginBottom: '4px' }} />
-          <span style={{ display: 'block', width: '14px', height: '1px', background: '#fff', marginBottom: '4px' }} />
-          <span style={{ display: 'block', width: '10px', height: '1px', background: '#fff' }} />
+          <div style={{ width: '18px', height: '11px', position: 'relative', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+            <motion.span
+              style={{ display: 'block', height: '1px', background: '#fff', transformOrigin: 'center' }}
+              animate={menuOpen
+                ? { rotate: 45, y: 5, width: '18px' }
+                : { rotate: 0, y: 0, width: '18px' }}
+              transition={{ duration: 0.25, ease: 'easeInOut' }}
+            />
+            <motion.span
+              style={{ display: 'block', height: '1px', background: '#fff' }}
+              animate={menuOpen ? { opacity: 0 } : { opacity: 1 }}
+              transition={{ duration: 0.15 }}
+            />
+            <motion.span
+              style={{ display: 'block', height: '1px', background: '#fff', transformOrigin: 'center' }}
+              animate={menuOpen
+                ? { rotate: -45, y: -5, width: '18px' }
+                : { rotate: 0, y: 0, width: '10px' }}
+              transition={{ duration: 0.25, ease: 'easeInOut' }}
+            />
+          </div>
         </button>
       </div>
 
