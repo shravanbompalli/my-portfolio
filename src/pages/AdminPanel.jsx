@@ -206,14 +206,14 @@ function VideoUploader({ value, onUpload, label, height = '200px' }) {
   )
 }
 
-function Input({ label, value, onChange, multiline, placeholder }) {
+function Input({ label, value, onChange, multiline, placeholder, type, onKeyDown }) {
   const s = { width: '100%', fontFamily: '"Geist",sans-serif', fontSize: '14px', color: white, backgroundColor: '#0d0d0d', border: `1px solid ${border}`, borderRadius: '8px', padding: '10px 14px', outline: 'none', resize: multiline ? 'vertical' : 'none' }
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
       {label && <label style={{ fontFamily: '"Geist",sans-serif', fontSize: '12px', color: gray, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{label}</label>}
       {multiline
         ? <textarea value={value || ''} onChange={e => onChange(e.target.value)} rows={4} placeholder={placeholder} style={s} onFocus={e => e.target.style.borderColor = accent} onBlur={e => e.target.style.borderColor = border} />
-        : <input value={value || ''} onChange={e => onChange(e.target.value)} placeholder={placeholder} style={s} onFocus={e => e.target.style.borderColor = accent} onBlur={e => e.target.style.borderColor = border} />
+        : <input type={type || 'text'} value={value || ''} onChange={e => onChange(e.target.value)} placeholder={placeholder} onKeyDown={onKeyDown} style={s} onFocus={e => e.target.style.borderColor = accent} onBlur={e => e.target.style.borderColor = border} />
       }
     </div>
   )
@@ -285,9 +285,10 @@ export default function AdminPanel() {
   const [shots, setShots] = useState([])
   const [collabs, setCollabs] = useState([])
   const [messages, setMessages] = useState([])
+  const [newTool, setNewTool] = useState('')
 
   const ADMIN_PW = 'shravan2025'
-  const showToast = (msg, type = 'success') => { setToast({ msg, type }); setTimeout(() => setToast(''), 3500) }
+  const showToast = (msg, type = 'success') => { setToast({ msg, type }); setTimeout(() => setToast(''), type === 'error' ? 6000 : 3500) }
 
   useEffect(() => { if (authed) loadAll() }, [authed])
 
@@ -302,7 +303,7 @@ export default function AdminPanel() {
       supabase.from('collaborations').select('*').order('sort_order'),
       supabase.from('contact_messages').select('*').order('created_at', { ascending: false }),
     ])
-    if (s.data) { const obj = {}; s.data.forEach(r => { obj[r.key] = { id: r.id, value: r.value } }); setSettings(obj) }
+    if (s.data) { const obj = {}; s.data.forEach(row => { obj[row.key] = { id: row.id, value: row.value } }); setSettings(obj) }
     if (sv.data) setServices(sv.data)
     if (p.data) setProjects(p.data)
     if (r.data) setReviews(r.data)
@@ -362,7 +363,8 @@ export default function AdminPanel() {
             <span style={{ color: accent }}>.</span>Admin Panel
           </h1>
           <p style={{ fontFamily: '"Geist",sans-serif', fontSize: '14px', color: gray, textAlign: 'center', margin: '0 0 24px' }}>Enter password to continue</p>
-          <Input value={pw} onChange={setPw} placeholder="Password" />
+          <Input value={pw} onChange={setPw} placeholder="Password" type="password"
+            onKeyDown={e => e.key === 'Enter' && (pw === ADMIN_PW ? setAuthed(true) : alert('Wrong password. Please try again.'))} />
           <div style={{ marginTop: '16px' }}>
             <Btn onClick={() => pw === ADMIN_PW ? setAuthed(true) : alert('Wrong password. Please try again.')} fullWidth>Enter Dashboard</Btn>
           </div>
@@ -443,6 +445,43 @@ export default function AdminPanel() {
           </div>
           <div style={{ marginTop: '14px' }}>
             <Input label="Subtext" value={settings.hero?.value?.subtext} onChange={v => updateSetting('hero', 'subtext', v)} multiline />
+          </div>
+
+          {/* ── Headline Text Color ── */}
+          <div style={{ marginTop: '20px' }}>
+            <p style={{ fontFamily: '"Geist",sans-serif', fontSize: '12px', color: gray, margin: '0 0 10px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Headline Color</p>
+            <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+              {[
+                { key: 'white',    label: 'White',    swatch: '#ffffff', note: 'mix-blend difference' },
+                { key: 'orange',   label: 'Orange',   swatch: '#ff4d00', note: 'brand accent' },
+                { key: 'gold',     label: 'Gold',     swatch: '#d4a843', note: 'luxury tone' },
+                { key: 'gradient', label: 'Gradient', swatch: 'linear-gradient(90deg,#fff,#ff4d00,#fff)', note: 'animated flow' },
+              ].map(opt => {
+                const active = (settings.hero?.value?.text_color || 'white') === opt.key
+                return (
+                  <div key={opt.key} onClick={async () => {
+                    updateSetting('hero', 'text_color', opt.key)
+                    await directSaveField('hero', 'text_color', opt.key, setSettings, showToast)
+                  }} style={{
+                    display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px',
+                    cursor: 'pointer', padding: '8px 10px', borderRadius: '10px',
+                    border: `2px solid ${active ? accent : border}`,
+                    backgroundColor: active ? 'rgba(255,77,0,0.08)' : '#0d0d0d',
+                    transition: 'all 0.2s', minWidth: '72px',
+                  }}>
+                    <div style={{
+                      width: '36px', height: '36px', borderRadius: '50%',
+                      background: opt.swatch,
+                      border: '2px solid rgba(255,255,255,0.1)',
+                      boxShadow: active ? `0 0 0 3px ${accent}44` : 'none',
+                    }} />
+                    <span style={{ fontFamily: '"Geist",sans-serif', fontSize: '11px', color: active ? accent : white, fontWeight: active ? 600 : 400 }}>{opt.label}</span>
+                    <span style={{ fontFamily: '"Geist",sans-serif', fontSize: '10px', color: gray, textAlign: 'center' }}>{opt.note}</span>
+                    {active && <span style={{ fontFamily: '"Geist",sans-serif', fontSize: '9px', color: accent, fontWeight: 700 }}>✓ ACTIVE</span>}
+                  </div>
+                )
+              })}
+            </div>
           </div>
 
           {/* Media uploads */}
@@ -586,8 +625,111 @@ export default function AdminPanel() {
 
         {/* ═══ ABOUT ═══ */}
         <Section title="👤 About Bio">
-          <Input label="Bio (supports emojis 🎬📷✨)" value={settings.about?.value?.bio} onChange={v => updateSetting('about', 'bio', v)} multiline />
-          <div style={{ marginTop: '16px' }}><Btn onClick={() => saveSetting('about', settings.about?.value)} disabled={saving} fullWidth>Save About</Btn></div>
+          {/* Background image */}
+          <ImageUploader
+            value={settings.about?.value?.about_image}
+            folder="about"
+            label="About background photo"
+            onUpload={url => saveImage('about', 'about_image', url)}
+          />
+
+          {/* Bio */}
+          <div style={{ marginTop: '20px' }}>
+            <Input label="Bio (supports emojis 🎬📷✨)" value={settings.about?.value?.bio} onChange={v => updateSetting('about', 'bio', v)} multiline />
+            <div style={{ marginTop: '12px' }}><Btn onClick={() => saveSetting('about', settings.about?.value)} disabled={saving} fullWidth>Save Bio</Btn></div>
+          </div>
+
+          {/* Tools list */}
+          <div style={{ marginTop: '24px' }}>
+            <p style={{ fontFamily: '"Geist",sans-serif', fontSize: '13px', color: gray, margin: '0 0 12px' }}>Tools &amp; Gear</p>
+
+            {(settings.about?.value?.tools || []).length > 0 && (
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '12px' }}>
+                {(settings.about?.value?.tools || []).map(tool => (
+                  <span key={tool} style={{
+                    fontFamily: '"Geist",sans-serif', fontSize: '13px', color: white,
+                    backgroundColor: '#222', border: `1px solid ${border}`,
+                    padding: '6px 14px', borderRadius: '40px',
+                    display: 'inline-flex', alignItems: 'center', gap: '8px',
+                  }}>
+                    {tool}
+                    <button
+                      onClick={() => {
+                        const filtered = (settings.about?.value?.tools || []).filter(t => t !== tool)
+                        directSaveField('about', 'tools', filtered, setSettings, showToast)
+                      }}
+                      style={{ background: 'none', border: 'none', color: gray, cursor: 'pointer', padding: 0, fontSize: '14px', lineHeight: 1 }}
+                    >×</button>
+                  </span>
+                ))}
+              </div>
+            )}
+
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <input
+                value={newTool}
+                onChange={e => setNewTool(e.target.value)}
+                onKeyDown={e => {
+                  if (e.key === 'Enter' && newTool.trim()) {
+                    const current = settings.about?.value?.tools || []
+                    if (current.includes(newTool.trim())) { showToast('Tool already added', 'error'); return }
+                    const updated = [...current, newTool.trim()]
+                    directSaveField('about', 'tools', updated, setSettings, showToast)
+                    setNewTool('')
+                  }
+                }}
+                placeholder="e.g. DaVinci Resolve"
+                style={{
+                  flex: 1, fontFamily: '"Geist",sans-serif', fontSize: '14px', color: white,
+                  backgroundColor: '#0d0d0d', border: `1px solid ${border}`, borderRadius: '8px',
+                  padding: '10px 14px', outline: 'none',
+                }}
+                onFocus={e => e.target.style.borderColor = accent}
+                onBlur={e => e.target.style.borderColor = border}
+              />
+              <Btn onClick={() => {
+                if (!newTool.trim()) return
+                const current = settings.about?.value?.tools || []
+                if (current.includes(newTool.trim())) { showToast('Tool already added', 'error'); return }
+                const updated = [...current, newTool.trim()]
+                directSaveField('about', 'tools', updated, setSettings, showToast)
+                setNewTool('')
+              }}>Add</Btn>
+            </div>
+          </div>
+        </Section>
+
+        {/* ═══ ANIMATION STYLE ═══ */}
+        <Section title="✨ Heading Animation Style">
+          <p style={{ fontFamily: '"Geist",sans-serif', fontSize: '13px', color: gray, marginBottom: '16px' }}>
+            Choose how headings animate on the project detail pages and throughout the site.
+          </p>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: '12px' }}>
+            {[
+              { key: 'none', label: 'None', desc: 'Plain — no animation' },
+              { key: 'fade', label: 'Fade Reveal', desc: 'Slide up + fade in' },
+              { key: 'blur', label: 'Blur Text', desc: 'Blur → sharp reveal' },
+              { key: 'gradient', label: 'Gradient', desc: 'Animated color flow' },
+              { key: 'fuzzy', label: 'Fuzzy Text', desc: 'Glitchy canvas effect' },
+            ].map(opt => {
+              const selected = (settings.animations?.value?.heading || 'blur') === opt.key
+              return (
+                <div key={opt.key} onClick={async () => {
+                  updateSetting('animations', 'heading', opt.key)
+                  await directSaveField('animations', 'heading', opt.key, setSettings, showToast)
+                }} style={{
+                  padding: '14px', borderRadius: '10px', cursor: 'pointer',
+                  border: `2px solid ${selected ? accent : border}`,
+                  backgroundColor: selected ? 'rgba(255,77,0,0.08)' : '#0d0d0d',
+                  transition: 'all 0.2s',
+                }}>
+                  <p style={{ fontFamily: '"Geist",sans-serif', fontSize: '14px', fontWeight: 600, color: selected ? accent : white, margin: '0 0 4px' }}>{opt.label}</p>
+                  <p style={{ fontFamily: '"Geist",sans-serif', fontSize: '11px', color: gray, margin: 0 }}>{opt.desc}</p>
+                  {selected && <p style={{ fontFamily: '"Geist",sans-serif', fontSize: '10px', color: accent, margin: '6px 0 0', fontWeight: 600 }}>✓ ACTIVE</p>}
+                </div>
+              )
+            })}
+          </div>
         </Section>
 
         {/* ═══ AWARDS & STATS ═══ */}
@@ -596,6 +738,7 @@ export default function AdminPanel() {
             <Input label="Award Name" value={settings.awards?.value?.name} onChange={v => updateSetting('awards', 'name', v)} />
             <Input label="Years" value={settings.awards?.value?.years} onChange={v => updateSetting('awards', 'years', v)} />
             <Input label="Count" value={settings.awards?.value?.count} onChange={v => updateSetting('awards', 'count', v)} />
+            <Input label="Counter Label" value={settings.awards?.value?.label} onChange={v => updateSetting('awards', 'label', v)} />
             <Input label="Projects" value={settings.stats?.value?.projects} onChange={v => updateSetting('stats', 'projects', v)} />
             <Input label="Satisfaction %" value={settings.stats?.value?.satisfaction} onChange={v => updateSetting('stats', 'satisfaction', v)} />
             <Input label="Hours" value={settings.stats?.value?.hours} onChange={v => updateSetting('stats', 'hours', v)} />
@@ -615,7 +758,7 @@ export default function AdminPanel() {
               <div style={{ marginTop: '10px' }}><Input label="Tags (comma)" value={s.tags?.join(', ')} onChange={v => { const u = [...services]; u[i].tags = v.split(',').map(t => t.trim()).filter(Boolean); setServices(u) }} /></div>
               <div style={{ marginTop: '10px' }}>
                 <ImageUploader value={s.image_url} folder="services" label={`Service image`} height="120px"
-                  onUpload={url => { const u = [...services]; u[i].image_url = url; setServices(u) }} />
+                  onUpload={url => { const u = [...services]; u[i] = { ...u[i], image_url: url }; setServices(u); saveRow('services', u[i]) }} />
               </div>
               <div style={{ display: 'flex', gap: '8px', marginTop: '10px' }}>
                 <Btn onClick={() => saveRow('services', services[i])} small disabled={saving}>Save</Btn>
@@ -634,6 +777,7 @@ export default function AdminPanel() {
               {/* Basic Info */}
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '10px' }}>
                 <Input label="Title" value={p.title} onChange={v => { const u = [...projects]; u[i].title = v; setProjects(u) }} />
+                <Input label="Slug (URL)" value={p.slug} onChange={v => { const u = [...projects]; u[i].slug = v; setProjects(u) }} placeholder="my-project-name" />
                 <Input label="Category" value={p.category} onChange={v => { const u = [...projects]; u[i].category = v; setProjects(u) }} />
                 <Input label="Client" value={p.client} onChange={v => { const u = [...projects]; u[i].client = v; setProjects(u) }} />
                 <Input label="Location" value={p.location} onChange={v => { const u = [...projects]; u[i].location = v; setProjects(u) }} />
@@ -647,7 +791,7 @@ export default function AdminPanel() {
                 <div>
                   <p style={{ fontFamily: '"Geist",sans-serif', fontSize: '11px', color: gray, margin: '0 0 6px', textTransform: 'uppercase' }}>Cover Image</p>
                   <ImageUploader value={p.cover_image} folder="portfolio" label="Cover" height="140px"
-                    onUpload={url => { const u = [...projects]; u[i].cover_image = url; setProjects(u) }} />
+                    onUpload={url => { const u = [...projects]; u[i] = { ...u[i], cover_image: url }; setProjects(u); saveRow('projects', u[i]) }} />
                 </div>
                 <div>
                   <p style={{ fontFamily: '"Geist",sans-serif', fontSize: '11px', color: '#a855f7', margin: '0 0 6px', textTransform: 'uppercase' }}>🎬 Project Video</p>
@@ -702,8 +846,9 @@ export default function AdminPanel() {
                           const u = [...projects]
                           const vids = [...(u[i].gallery_videos || [])]
                           vids[vi] = { ...vids[vi], url }
-                          u[i].gallery_videos = vids
+                          u[i] = { ...u[i], gallery_videos: vids }
                           setProjects(u)
+                          saveRow('projects', u[i])
                         }}
                       />
                       {/* YouTube / Vimeo URL */}
@@ -781,8 +926,9 @@ export default function AdminPanel() {
                             const u = [...projects]
                             const imgs = [...(u[i].gallery_images || [])]
                             imgs[gi] = { url, aspect_ratio: imgRatio || '16:9' }
-                            u[i].gallery_images = imgs
+                            u[i] = { ...u[i], gallery_images: imgs }
                             setProjects(u)
+                            saveRow('projects', u[i])
                           }}
                         />
                         <div style={{ padding: '6px' }}>
@@ -841,7 +987,7 @@ export default function AdminPanel() {
 
             </div>
           ))}
-          <Btn onClick={() => saveRow('projects', { title: 'New Project', category: 'Photography', description: '', sort_order: projects.length + 1, is_active: true, gallery_animation: 'parallax', image_display_style: 'parallax', gallery_videos: [], gallery_images: [] })}>+ Add Project</Btn>
+          <Btn onClick={() => saveRow('projects', { title: 'New Project', slug: 'new-project-' + Date.now(), category: 'Photography', description: '', sort_order: projects.length + 1, is_active: true, gallery_animation: 'parallax', image_display_style: 'parallax', gallery_videos: [], gallery_images: [] })}>+ Add Project</Btn>
         </Section>
 
         {/* ═══ MY SHOTS ═══ */}
@@ -851,10 +997,10 @@ export default function AdminPanel() {
               <div key={s.id} style={{ borderRadius: '10px', overflow: 'hidden', border: `1px solid ${border}`, backgroundColor: '#0d0d0d' }}>
                 {s.media_type === 'video' ? (
                   <VideoUploader value={s.video_url} label="Video" height="160px"
-                    onUpload={url => { const u = [...shots]; u[i].video_url = url; setShots(u); saveRow('my_shots', { ...shots[i], video_url: url }) }} />
+                    onUpload={url => { const u = [...shots]; u[i] = { ...u[i], video_url: url }; setShots(u); saveRow('my_shots', u[i]) }} />
                 ) : (
                   <ImageUploader value={s.image_url} folder="shots" label="Photo" height="160px"
-                    onUpload={url => { const u = [...shots]; u[i].image_url = url; setShots(u); saveRow('my_shots', { ...shots[i], image_url: url }) }} />
+                    onUpload={url => { const u = [...shots]; u[i] = { ...u[i], image_url: url }; setShots(u); saveRow('my_shots', u[i]) }} />
                 )}
                 <div style={{ padding: '8px' }}>
                   <input value={s.title || ''} placeholder="Title" onChange={e => { const u = [...shots]; u[i].title = e.target.value; setShots(u) }}
@@ -933,6 +1079,33 @@ export default function AdminPanel() {
           <Btn onClick={() => saveRow('faqs', { question: 'New question?', answer: 'Answer...', sort_order: faqs.length + 1, is_active: true })}>+ Add FAQ</Btn>
         </Section>
 
+        {/* ═══ COLLABORATIONS ═══ */}
+        <Section title="🤝 Collaborations" badge={collabs.length}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: '10px' }}>
+            {collabs.map((c, i) => (
+              <div key={c.id} style={{ backgroundColor: '#0d0d0d', borderRadius: '10px', padding: '10px', border: `1px solid ${border}` }}>
+                <ImageUploader value={c.logo_url} folder="collabs" label="Logo" height="80px"
+                  onUpload={url => { const u = [...collabs]; u[i] = { ...u[i], logo_url: url }; setCollabs(u); saveRow('collaborations', u[i]) }} />
+                <div style={{ marginTop: '8px' }}>
+                  <input value={c.name || ''} placeholder="Brand name" onChange={e => { const u = [...collabs]; u[i] = { ...u[i], name: e.target.value }; setCollabs(u) }}
+                    style={{ width: '100%', fontFamily: '"Geist",sans-serif', fontSize: '11px', color: white, backgroundColor: 'transparent', border: 'none', outline: 'none', padding: '4px 0', borderBottom: `1px solid ${border}` }} />
+                </div>
+                <div style={{ display: 'flex', gap: '4px', marginTop: '8px' }}>
+                  <Btn onClick={() => saveRow('collaborations', collabs[i])} small>Save</Btn>
+                  <Btn onClick={() => deleteRow('collaborations', c.id)} variant="danger" small>×</Btn>
+                </div>
+              </div>
+            ))}
+            <div onClick={() => saveRow('collaborations', { name: 'Brand', logo_url: '', is_active: true, sort_order: collabs.length + 1 })}
+              style={{ height: '80px', borderRadius: '10px', border: `2px dashed ${border}`, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', gap: '4px', transition: 'border-color 0.2s', marginTop: '2px' }}
+              onMouseEnter={e => e.currentTarget.style.borderColor = accent}
+              onMouseLeave={e => e.currentTarget.style.borderColor = border}>
+              <span style={{ fontSize: '20px', color: gray }}>🤝</span>
+              <span style={{ fontFamily: '"Geist",sans-serif', fontSize: '11px', color: gray }}>+ Add Brand</span>
+            </div>
+          </div>
+        </Section>
+
         {/* ═══ MESSAGES ═══ */}
         <Section title="📨 Messages" badge={messages.length}>
           {messages.length === 0 ? <p style={{ fontFamily: '"Geist",sans-serif', fontSize: '14px', color: gray }}>No messages yet.</p> : (
@@ -940,7 +1113,10 @@ export default function AdminPanel() {
               <div key={m.id} style={{ backgroundColor: '#0d0d0d', borderRadius: '10px', padding: '14px', marginBottom: '8px', border: `1px solid ${border}` }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px', flexWrap: 'wrap', gap: '8px' }}>
                   <span style={{ fontFamily: '"Geist",sans-serif', fontSize: '15px', fontWeight: 500, color: white }}>{m.name}</span>
-                  <span style={{ fontFamily: '"Geist",sans-serif', fontSize: '12px', color: gray }}>{new Date(m.created_at).toLocaleDateString()}</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <span style={{ fontFamily: '"Geist",sans-serif', fontSize: '12px', color: gray }}>{new Date(m.created_at).toLocaleDateString()}</span>
+                    <Btn onClick={() => deleteRow('contact_messages', m.id)} variant="danger" small>Delete</Btn>
+                  </div>
                 </div>
                 <p style={{ fontFamily: '"Geist",sans-serif', fontSize: '13px', color: accent, margin: '0 0 6px' }}>{m.email}</p>
                 <p style={{ fontFamily: '"Geist",sans-serif', fontSize: '14px', color: '#ccc', margin: 0, lineHeight: 1.5 }}>{m.message}</p>
@@ -953,8 +1129,6 @@ export default function AdminPanel() {
       <style>{`
         @keyframes spin { to { transform: rotate(360deg); } }
         @keyframes slideDown { from { opacity: 0; transform: translate(-50%, -20px); } to { opacity: 1; transform: translate(-50%, 0); } }
-        * { cursor: auto !important; }
-        input, textarea, button, a { cursor: auto !important; }
       `}</style>
     </div>
   )
