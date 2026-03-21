@@ -588,6 +588,14 @@ export default function AdminPanel() {
 
         {/* ═══ CONTACT & SOCIAL ═══ */}
         <Section title="📞 Contact & Social">
+          <p style={{ fontFamily: '"Geist",sans-serif', fontSize: '11px', color: gray, margin: '0 0 6px', textTransform: 'uppercase' }}>Contact Page Background Image</p>
+          <ImageUploader
+            value={settings.contact?.value?.contact_image}
+            folder="contact"
+            label="Contact background photo"
+            onUpload={url => saveImage('contact', 'contact_image', url)}
+          />
+          <div style={{ marginTop: '16px' }} />
           <div className="admin-grid-2" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '14px' }}>
             <Input label="Email" value={settings.contact?.value?.email} onChange={v => updateSetting('contact', 'email', v)} />
             <Input label="Phone" value={settings.contact?.value?.phone} onChange={v => updateSetting('contact', 'phone', v)} />
