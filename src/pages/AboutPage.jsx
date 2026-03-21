@@ -3,42 +3,62 @@ import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { supabase } from '../lib/supabase'
 import AboutText from '../components/AboutText'
-import Services from '../components/Services'
 import Footer from '../components/Footer'
+import BlurText from '../components/reactbits/BlurText'
+import FadeReveal from '../components/reactbits/FadeReveal'
 
 const spring = { type: 'spring', stiffness: 70, damping: 12, mass: 0.8 }
 
-function NavLink({ to, label }) {
-  const [h, setH] = useState(false)
-  const s = {
-    fontFamily: '"Geist",sans-serif', fontSize: '18px', fontWeight: 500,
-    letterSpacing: '0.03em', textDecoration: 'underline',
-    textDecorationOffset: '3px', textDecorationThickness: '2px',
-    transition: 'transform 0.3s ease', display: 'block',
-  }
+function ToolsSection({ tools }) {
+  if (!tools || tools.length === 0) return null
   return (
-    <Link to={to} onMouseEnter={() => setH(true)} onMouseLeave={() => setH(false)}
-      style={{ display: 'block', position: 'relative', overflow: 'hidden', height: '24px', textDecoration: 'none' }}>
-      <span style={{ ...s, color: '#000', transform: h ? 'translateY(-100%)' : 'translateY(0)' }}>{label}</span>
-      <span style={{ ...s, color: '#ff4d00', position: 'absolute', left: 0, top: '100%', transform: h ? 'translateY(-100%)' : 'translateY(0)' }}>{label}</span>
-    </Link>
+    <section style={{
+      backgroundColor: '#f5f5f5',
+      padding: 'clamp(60px, 8vw, 100px) clamp(18px, 4vw, 40px)',
+    }}>
+      <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
+        <p style={{
+          fontFamily: '"Geist", sans-serif', fontSize: '12px',
+          letterSpacing: '0.15em', textTransform: 'uppercase',
+          color: '#aaa', margin: '0 0 32px',
+        }}>
+          Tools &amp; Gear
+        </p>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px' }}>
+          {tools.map((tool, i) => (
+            <FadeReveal key={tool} delay={i * 0.05}>
+              <span style={{
+                fontFamily: '"Geist", sans-serif', fontSize: '15px', color: '#000',
+                padding: '10px 20px', borderRadius: '40px',
+                border: '1px solid rgba(0,0,0,0.12)', backgroundColor: '#fff',
+                display: 'inline-block',
+              }}>
+                {tool}
+              </span>
+            </FadeReveal>
+          ))}
+        </div>
+      </div>
+    </section>
   )
 }
 
 export default function AboutPage() {
   const [brand, setBrand] = useState(null)
   const [contact, setContact] = useState(null)
+  const [about, setAbout] = useState(null)
 
   useEffect(() => {
     async function load() {
       const { data } = await supabase
         .from('site_settings')
         .select('key, value')
-        .in('key', ['brand', 'contact'])
+        .in('key', ['brand', 'contact', 'about'])
       if (data) {
         data.forEach(r => {
           if (r.key === 'brand') setBrand(r.value)
           if (r.key === 'contact') setContact(r.value)
+          if (r.key === 'about') setAbout(r.value)
         })
       }
     }
@@ -79,112 +99,104 @@ export default function AboutPage() {
         </div>
       </div>
 
-      {/* ── Right side nav ── */}
-      <nav className="page-right-nav" style={{
-        position: 'fixed', right: '40px', top: '50%', transform: 'translateY(-50%)',
-        zIndex: 100, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '20px',
-      }}>
-        <NavLink to="/portfolio" label="PORTFOLIO" />
-        <NavLink to="/about" label="ABOUT ME" />
-        <NavLink to="/my-shots" label="MY SHOTS" />
-        <NavLink to="/contact" label="CONTACT" />
-      </nav>
-
-      {/* ── Hero ── */}
-      <section style={{
-        padding: 'clamp(60px, 10vw, 140px) clamp(16px, 4vw, 40px) clamp(40px, 5vw, 60px)',
-        maxWidth: '1400px', margin: '0 auto', position: 'relative', zIndex: 1,
-      }}>
+      {/* ── Hero: full-bleed image ── */}
+      <section style={{ position: 'relative', height: '100vh', overflow: 'hidden', backgroundColor: '#000' }}>
+        {/* Background image */}
         <motion.div
-          initial={{ opacity: 0, y: 50 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={spring}
-          className="hero-headline"
-          style={{ display: 'flex', alignItems: 'center', gap: '0', flexWrap: 'wrap', marginBottom: '24px' }}
+          initial={{ scale: 1.05 }}
+          animate={{ scale: 1 }}
+          transition={{ type: 'spring', stiffness: 60, damping: 14 }}
+          style={{ position: 'absolute', inset: 0 }}
         >
-          <h1 style={{
-            fontFamily: '"Geist",sans-serif', fontSize: 'clamp(40px, 10vw, 130px)', fontWeight: 700,
-            letterSpacing: '-0.04em', lineHeight: 1, color: '#000', margin: 0,
-          }}>ABOUT</h1>
-          <div className="headline-inline-image" style={{
-            width: 'clamp(60px, 12vw, 160px)', height: 'clamp(45px, 8vw, 110px)',
-            borderRadius: '8px', overflow: 'hidden', backgroundColor: '#ddd',
-            margin: '0 8px', flexShrink: 0,
-          }}>
-            <div style={{ width: '100%', height: '100%', background: 'linear-gradient(135deg,#d0c8c0,#b0a8a0)' }} />
-          </div>
-          <h1 style={{
-            fontFamily: '"Geist",sans-serif', fontSize: 'clamp(40px, 10vw, 130px)', fontWeight: 700,
-            letterSpacing: '-0.04em', lineHeight: 1, color: '#000', margin: 0,
-          }}>ME</h1>
+          {about?.about_image ? (
+            <img
+              src={about.about_image}
+              alt=""
+              style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+            />
+          ) : (
+            <div style={{ width: '100%', height: '100%', background: 'linear-gradient(135deg, #1a1a1a, #000)' }} />
+          )}
         </motion.div>
 
-        {/* ── Mobile headline image (hidden on tablet+desktop) ── */}
-        <motion.div
-          className="headline-mobile-image"
-          initial={{ opacity: 0, y: 30, scale: 0.95 }}
-          whileInView={{ opacity: 1, y: 0, scale: 1 }}
-          viewport={{ once: true, amount: 0.3 }}
-          transition={{ type: 'spring', stiffness: 60, damping: 14, mass: 0.8 }}
-        >
-          <div style={{
-            width: '100%', height: '200px',
-            borderRadius: '8px', overflow: 'hidden', backgroundColor: '#ddd',
-          }}>
-            <div style={{ width: '100%', height: '100%', background: 'linear-gradient(135deg,#d0c8c0,#b0a8a0)' }} />
-          </div>
-        </motion.div>
+        {/* Dark overlay */}
+        <div style={{ position: 'absolute', inset: 0, backgroundColor: 'rgba(0,0,0,0.45)', zIndex: 1 }} />
 
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ ...spring, delay: 0.15 }}
-          style={{ display: 'flex', flexDirection: 'column', gap: '24px', maxWidth: '400px' }}
-        >
-          <p style={{
-            fontFamily: '"Geist",sans-serif', fontSize: 'clamp(14px, 1.5vw, 18px)',
-            color: '#404040', lineHeight: 1.6, margin: 0,
+        {/* Content */}
+        <div style={{
+          position: 'absolute', inset: 0, zIndex: 2,
+          display: 'flex', flexDirection: 'column', justifyContent: 'flex-end',
+          padding: 'clamp(24px, 6vw, 80px)',
+        }}>
+          {/* ABOUT ME headline via BlurText */}
+          <div className="about-headline-wrap" style={{
+            fontSize: 'clamp(48px, 11vw, 148px)', fontWeight: 700,
+            letterSpacing: '-0.04em', color: '#fff', lineHeight: 1, marginBottom: '16px',
           }}>
-            Get to know the person behind the lens. My journey, my passion, and what drives me to create timeless visuals.
-          </p>
-          <motion.div whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }} style={{ display: 'inline-block', width: 'fit-content' }}>
-            <Link to="/contact" style={{
-              display: 'inline-flex', alignItems: 'center', gap: '8px',
-              fontFamily: '"Geist",sans-serif', fontSize: '15px', fontWeight: 500,
-              color: '#fff', backgroundColor: '#000', padding: '14px 28px',
-              borderRadius: '40px', textDecoration: 'none',
-              transition: 'background-color 0.3s',
+            <BlurText text="ABOUT ME" delay={100} animateBy="words" direction="bottom" />
+          </div>
+
+          {/* Tagline — uses animate (not whileInView) since it's above the fold */}
+          <motion.p
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ type: 'spring', stiffness: 60, damping: 14, delay: 0.5 }}
+            style={{
+              fontFamily: '"Geist", sans-serif',
+              fontSize: 'clamp(16px, 2vw, 22px)',
+              color: 'rgba(255,255,255,0.7)',
+              margin: '0 0 28px', lineHeight: 1.5,
             }}
-              onMouseEnter={e => e.currentTarget.style.backgroundColor = '#ff4d00'}
-              onMouseLeave={e => e.currentTarget.style.backgroundColor = '#000'}>
-              <span style={{ fontSize: '14px' }}>✦</span> Capture Your Story
-            </Link>
+          >
+            The person behind the lens.
+          </motion.p>
+
+          {/* CTA — uses animate (not whileInView) since it's above the fold */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ type: 'spring', stiffness: 60, damping: 14, delay: 0.7 }}
+            style={{ display: 'inline-block' }}
+          >
+            <motion.div whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }} style={{ display: 'inline-block' }}>
+              <Link to="/contact" style={{
+                display: 'inline-flex', alignItems: 'center', gap: '8px',
+                fontFamily: '"Geist", sans-serif', fontSize: '15px', fontWeight: 500,
+                color: '#fff', backgroundColor: '#000', padding: '14px 28px',
+                borderRadius: '40px', textDecoration: 'none',
+                transition: 'background-color 0.3s',
+              }}
+                onMouseEnter={e => e.currentTarget.style.backgroundColor = '#ff4d00'}
+                onMouseLeave={e => e.currentTarget.style.backgroundColor = '#000'}
+              >
+                <span style={{ fontSize: '14px' }}>✦</span> Capture Your Story
+              </Link>
+            </motion.div>
           </motion.div>
-        </motion.div>
+        </div>
       </section>
 
       {/* ── Sections ── */}
       <div style={{ position: 'relative', zIndex: 1 }}>
         <AboutText />
-        <Services />
+        <ToolsSection tools={about?.tools} />
         <Footer />
       </div>
 
       <style>{`
-        .headline-mobile-image { display: none; }
-        @media (max-width: 809px) {
-          .page-right-nav { display: none !important; }
-          .nav-contact, .nav-info { display: none !important; }
-          .hero-headline { justify-content: center !important; }
-          .headline-inline-image { display: none !important; }
-          .headline-mobile-image {
-            display: block;
-            margin-top: 20px;
-            margin-bottom: 8px;
-          }
+        .about-headline-wrap p {
+          font-size: inherit !important;
+          font-weight: inherit !important;
+          letter-spacing: inherit !important;
+          line-height: inherit !important;
+          color: inherit !important;
+          font-family: "Geist", sans-serif !important;
         }
-        @media (min-width: 810px) and (max-width: 1279px) {
-          .page-right-nav { right: 20px !important; }
+        @media (max-width: 809px) {
+          .nav-contact, .nav-info { display: none !important; }
+          .about-headline-wrap {
+            font-size: clamp(32px, 10vw, 64px) !important;
+          }
         }
       `}</style>
     </div>
