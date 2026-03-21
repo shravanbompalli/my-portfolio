@@ -7,8 +7,6 @@ import Footer from '../components/Footer'
 import BlurText from '../components/reactbits/BlurText'
 import FadeReveal from '../components/reactbits/FadeReveal'
 
-const spring = { type: 'spring', stiffness: 70, damping: 12, mass: 0.8 }
-
 function ToolsSection({ tools }) {
   if (!tools || tools.length === 0) return null
   return (
