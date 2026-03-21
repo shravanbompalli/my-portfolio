@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { supabase } from '../lib/supabase'
@@ -26,6 +26,9 @@ export default function TestimonialHighlight() {
   const [isMobile, setIsMobile] = useState(
     typeof window !== 'undefined' ? window.matchMedia('(max-width: 809px)').matches : false
   )
+  const sectionRef = useRef()
+  const tallImgWrapRef = useRef()
+  const rafRef = useRef()
 
   useEffect(() => {
     async function load() {
@@ -46,10 +49,30 @@ export default function TestimonialHighlight() {
     return () => mq.removeEventListener('change', handler)
   }, [])
 
+  // Parallax — rAF + direct DOM ref, no re-renders
+  useEffect(() => {
+    function onScroll() {
+      if (rafRef.current) return
+      rafRef.current = requestAnimationFrame(() => {
+        rafRef.current = null
+        if (!sectionRef.current || !tallImgWrapRef.current) return
+        const rect = sectionRef.current.getBoundingClientRect()
+        if (rect.bottom <= 0 || rect.top >= window.innerHeight) return
+        tallImgWrapRef.current.style.transform = `translateY(${window.scrollY * 0.1}px)`
+      })
+    }
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => {
+      window.removeEventListener('scroll', onScroll)
+      if (rafRef.current) cancelAnimationFrame(rafRef.current)
+    }
+  }, [])
+
   if (!t) return null
 
   return (
     <section
+      ref={sectionRef}
       style={{
         backgroundColor: '#f5f5f5',
         padding: '0 clamp(18px, 4vw, 40px)',
@@ -209,13 +232,14 @@ export default function TestimonialHighlight() {
           </motion.div>
 
           {/* Image 1 — tall portrait, RIGHT, overlaps hero — ANIMATED: rises up slowly */}
+          <div ref={tallImgWrapRef} style={{ flex: '1 1 55%', willChange: 'transform' }}>
           <motion.div
             initial={isMobile ? { opacity: 0, scale: 0.95 } : { opacity: 0, y: 200, rotate: 3, scale: 0.9 }}
             whileInView={isMobile ? { opacity: 1, scale: 1 } : { opacity: 1, y: 0, rotate: 0, scale: 1 }}
             viewport={{ once: true, amount: isMobile ? 0.2 : 0.05 }}
             transition={isMobile ? { type: 'spring', stiffness: 60, damping: 14, mass: 0.8, delay: 0.1 } : { ...imgSpring, delay: 0 }}
             style={{
-              flex: '1 1 55%', aspectRatio: '3 / 4.5', borderRadius: '12px',
+              width: '100%', aspectRatio: '3 / 4.5', borderRadius: '12px',
               overflow: 'hidden', backgroundColor: '#e8e4e0',
               marginTop: isMobile ? 0 : 'clamp(-120px, -12vw, -60px)',
             }}
@@ -238,6 +262,7 @@ export default function TestimonialHighlight() {
               </div>
             )}
           </motion.div>
+          </div>
         </div>
       </div>
 
