@@ -779,6 +779,14 @@ export default function AdminPanel() {
 
         {/* ═══ PROJECTS ═══ */}
         <Section title="🖼️ Portfolio" badge={projects.length}>
+          <p style={{ fontFamily: '"Geist",sans-serif', fontSize: '11px', color: gray, margin: '0 0 6px', textTransform: 'uppercase' }}>Portfolio Page Heading Image</p>
+          <ImageUploader
+            value={settings.portfolio?.value?.portfolio_image}
+            folder="portfolio"
+            label="Portfolio heading photo"
+            onUpload={url => saveImage('portfolio', 'portfolio_image', url)}
+          />
+          <div style={{ marginTop: '20px' }} />
           {projects.map((p, i) => (
             <div key={p.id} style={{ backgroundColor: '#0d0d0d', borderRadius: '12px', padding: '14px', marginBottom: '12px', border: `1px solid ${border}` }}>
               
