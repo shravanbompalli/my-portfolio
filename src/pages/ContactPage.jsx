@@ -2,25 +2,10 @@ import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { supabase } from '../lib/supabase'
+import BlurText from '../components/reactbits/BlurText'
+import FadeReveal from '../components/reactbits/FadeReveal'
 
 const spring = { type: 'spring', stiffness: 70, damping: 12, mass: 0.8 }
-
-function NavLink({ to, label }) {
-  const [h, setH] = useState(false)
-  const s = {
-    fontFamily: '"Geist",sans-serif', fontSize: '18px', fontWeight: 500,
-    letterSpacing: '0.03em', textDecoration: 'underline',
-    textDecorationOffset: '3px', textDecorationThickness: '2px',
-    transition: 'transform 0.3s ease', display: 'block',
-  }
-  return (
-    <Link to={to} onMouseEnter={() => setH(true)} onMouseLeave={() => setH(false)}
-      style={{ display: 'block', position: 'relative', overflow: 'hidden', height: '24px', textDecoration: 'none' }}>
-      <span style={{ ...s, color: '#000', transform: h ? 'translateY(-100%)' : 'translateY(0)' }}>{label}</span>
-      <span style={{ ...s, color: '#ff4d00', position: 'absolute', left: 0, top: '100%', transform: h ? 'translateY(-100%)' : 'translateY(0)' }}>{label}</span>
-    </Link>
-  )
-}
 
 export default function ContactPage() {
   const [brand, setBrand] = useState(null)
@@ -84,51 +69,68 @@ export default function ContactPage() {
         </div>
       </div>
 
-      {/* ── Right side nav ── */}
-      <nav className="page-right-nav" style={{
-        position: 'fixed', right: '40px', top: '50%', transform: 'translateY(-50%)',
-        zIndex: 100, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '20px',
-      }}>
-        <NavLink to="/portfolio" label="PORTFOLIO" />
-        <NavLink to="/about" label="ABOUT ME" />
-        <NavLink to="/my-shots" label="MY SHOTS" />
-        <NavLink to="/contact" label="CONTACT" />
-      </nav>
+      {/* ── Hero: full-bleed image ── */}
+      <section style={{ position: 'relative', height: '100vh', overflow: 'hidden', backgroundColor: '#000' }}>
+        {/* Background image */}
+        <motion.div
+          initial={{ scale: 1.05 }}
+          animate={{ scale: 1 }}
+          transition={{ type: 'spring', stiffness: 60, damping: 14 }}
+          style={{ position: 'absolute', inset: 0 }}
+        >
+          {contact?.contact_image ? (
+            <img
+              src={contact.contact_image}
+              alt=""
+              style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+            />
+          ) : (
+            <div style={{ width: '100%', height: '100%', background: 'linear-gradient(135deg, #1a1a1a, #000)' }} />
+          )}
+        </motion.div>
 
-      {/* ── Hero ── */}
-      <section style={{
-        position: 'relative', width: '100%', minHeight: 'clamp(300px, 50vh, 500px)',
-        overflow: 'hidden', backgroundColor: '#e8d8d0',
-      }}>
-        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, #e8d0c8, #d0b8b0)' }} />
+        {/* Dark overlay */}
+        <div style={{ position: 'absolute', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 1 }} />
+
+        {/* Content */}
         <div style={{
           position: 'absolute', inset: 0, zIndex: 2,
           display: 'flex', flexDirection: 'column', justifyContent: 'flex-end',
-          padding: 'clamp(24px, 4vw, 48px) clamp(16px, 4vw, 40px)',
+          padding: 'clamp(24px, 6vw, 80px)',
         }}>
+          {/* GET IN TOUCH headline */}
+          <div className="contact-headline-wrap" style={{
+            fontSize: 'clamp(48px, 11vw, 148px)', fontWeight: 700,
+            letterSpacing: '-0.04em', color: '#fff', lineHeight: 1, marginBottom: '16px',
+          }}>
+            <BlurText text="GET IN TOUCH" delay={100} animateBy="words" direction="bottom" />
+          </div>
+
+          {/* Tagline */}
           <motion.p
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ ...spring, delay: 0.2 }}
+            transition={{ type: 'spring', stiffness: 60, damping: 14, delay: 0.5 }}
             style={{
-              fontFamily: '"Geist",sans-serif', fontSize: 'clamp(14px, 2vw, 16px)', fontWeight: 400,
-              color: '#fff', lineHeight: 1.5, margin: '0 0 16px', maxWidth: '320px',
-              textShadow: '0 1px 4px rgba(0,0,0,0.3)',
+              fontFamily: '"Geist", sans-serif',
+              fontSize: 'clamp(16px, 2vw, 22px)',
+              color: 'rgba(255,255,255,0.7)',
+              margin: '0 0 32px', lineHeight: 1.5,
             }}
           >
-            Let's create timeless photos you'll cherish forever. Book your session today.
+            Let's create something timeless together.
           </motion.p>
-          <motion.h1
-            initial={{ opacity: 0, y: 50 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={spring}
-            style={{
-              fontFamily: '"Geist",sans-serif', fontSize: 'clamp(36px, 10vw, 120px)', fontWeight: 700,
-              letterSpacing: '-0.04em', lineHeight: 0.9, color: '#000', margin: 0, opacity: 0.15,
-            }}
+
+          {/* Scroll indicator */}
+          <motion.div
+            animate={{ y: [0, 8, 0] }}
+            transition={{ repeat: Infinity, duration: 1.4, ease: 'easeInOut' }}
+            style={{ color: 'rgba(255,255,255,0.4)', width: '24px' }}
           >
-            GET IN TOUCH
-          </motion.h1>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="6 9 12 15 18 9" />
+            </svg>
+          </motion.div>
         </div>
       </section>
 
@@ -140,11 +142,9 @@ export default function ContactPage() {
         <div className="contact-grid" style={{ display: 'flex', flexWrap: 'wrap', gap: 'clamp(24px, 4vw, 60px)' }}>
 
           {/* Left — Info */}
-          <motion.div
+          <FadeReveal y={40} delay={0.1} style={{ flex: '1 1 300px', minWidth: '260px' }}>
+          <div
             className="contact-info-panel"
-            initial={{ opacity: 0, x: -40 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ ...spring, delay: 0.1 }}
             style={{
               flex: '1 1 300px', minWidth: '260px',
               backgroundColor: '#fff', borderRadius: '12px', padding: 'clamp(20px, 3vw, 40px)',
@@ -200,14 +200,13 @@ export default function ContactPage() {
                 )}
               </div>
             )}
-          </motion.div>
+          </div>
+          </FadeReveal>
 
           {/* Right — Form */}
-          <motion.div
+          <FadeReveal y={40} delay={0.25} style={{ flex: '1.5 1 350px', minWidth: '280px' }}>
+          <div
             className="contact-form-panel"
-            initial={{ opacity: 0, x: 40 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ ...spring, delay: 0.2 }}
             style={{
               flex: '1.5 1 350px', minWidth: '280px',
               backgroundColor: '#000', borderRadius: '12px', padding: 'clamp(20px, 3vw, 40px)',
@@ -314,11 +313,20 @@ export default function ContactPage() {
                 </motion.div>
               </div>
             )}
-          </motion.div>
+          </div>
+          </FadeReveal>
         </div>
       </section>
 
       <style>{`
+        .contact-headline-wrap p {
+          font-size: inherit !important;
+          font-weight: inherit !important;
+          letter-spacing: inherit !important;
+          line-height: inherit !important;
+          color: inherit !important;
+          font-family: "Geist", sans-serif !important;
+        }
         @media (max-width: 809px) {
           .page-right-nav { display: none !important; }
           .nav-contact, .nav-info { display: none !important; }
@@ -332,6 +340,9 @@ export default function ContactPage() {
             min-width: 0 !important;
             width: 100% !important;
             flex: 1 1 100% !important;
+          }
+          .contact-headline-wrap {
+            font-size: clamp(32px, 10vw, 64px) !important;
           }
         }
         input::placeholder, textarea::placeholder { color: rgba(255,255,255,0.3); }
