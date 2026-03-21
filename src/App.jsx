@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom'
 import { useState, useEffect, useRef } from 'react'
+import Lenis from 'lenis'
 import CustomCursor from './components/CustomCursor'
 import Navbar from './components/Navbar'
 import LoadingAnimation from './components/LoadingAnimation'
@@ -125,7 +126,7 @@ function PageTransitions() {
       setPhase('covered')
       prevPath.current = displayLocation.pathname
       setDisplayLocation(location)
-      window.scrollTo({ top: 0, behavior: 'instant' })
+      document.documentElement.scrollTop = 0
 
               // Phase 3: Small pause while covered, then reveal
       addTimeout(() => {
@@ -182,6 +183,35 @@ function PageTransitions() {
 
 export default function App() {
   const [showLoading, setShowLoading] = useState(true)
+  const lenisRef = useRef(null)
+
+  // Lenis smooth scroll — init once, pause during loading screen
+  useEffect(() => {
+    const lenis = new Lenis({
+      duration: 1.2,
+      easing: t => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+      smoothWheel: true,
+    })
+    lenisRef.current = lenis
+
+    let rafId
+    function raf(time) {
+      lenis.raf(time)
+      rafId = requestAnimationFrame(raf)
+    }
+    rafId = requestAnimationFrame(raf)
+
+    return () => {
+      cancelAnimationFrame(rafId)
+      lenis.destroy()
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!lenisRef.current) return
+    if (showLoading) lenisRef.current.stop()
+    else lenisRef.current.start()
+  }, [showLoading])
 
   useEffect(() => {
     if (showLoading) {
