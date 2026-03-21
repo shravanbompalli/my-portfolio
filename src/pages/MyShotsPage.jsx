@@ -7,26 +7,10 @@ import Footer from '../components/Footer'
 
 const spring = { type: 'spring', stiffness: 70, damping: 12, mass: 0.8 }
 
-function NavLink({ to, label }) {
-  const [h, setH] = useState(false)
-  const s = {
-    fontFamily: '"Geist",sans-serif', fontSize: '18px', fontWeight: 500,
-    letterSpacing: '0.03em', textDecoration: 'underline',
-    textDecorationOffset: '3px', textDecorationThickness: '2px',
-    transition: 'transform 0.3s ease', display: 'block',
-  }
-  return (
-    <Link to={to} onMouseEnter={() => setH(true)} onMouseLeave={() => setH(false)}
-      style={{ display: 'block', position: 'relative', overflow: 'hidden', height: '24px', textDecoration: 'none' }}>
-      <span style={{ ...s, color: '#000', transform: h ? 'translateY(-100%)' : 'translateY(0)' }}>{label}</span>
-      <span style={{ ...s, color: '#ff4d00', position: 'absolute', left: 0, top: '100%', transform: h ? 'translateY(-100%)' : 'translateY(0)' }}>{label}</span>
-    </Link>
-  )
-}
-
 export default function MyShotsPage() {
   const [brand, setBrand] = useState(null)
   const [contact, setContact] = useState(null)
+  const [myshots, setMyshots] = useState(null)
   const [isMobile, setIsMobile] = useState(
     typeof window !== 'undefined' ? window.matchMedia('(max-width: 809px)').matches : false
   )
@@ -43,11 +27,12 @@ export default function MyShotsPage() {
       const { data } = await supabase
         .from('site_settings')
         .select('key, value')
-        .in('key', ['brand', 'contact'])
+        .in('key', ['brand', 'contact', 'myshots'])
       if (data) {
         data.forEach(r => {
           if (r.key === 'brand') setBrand(r.value)
           if (r.key === 'contact') setContact(r.value)
+          if (r.key === 'myshots') setMyshots(r.value)
         })
       }
     }
@@ -80,17 +65,6 @@ export default function MyShotsPage() {
         </div>
       </div>
 
-      {/* ── Right side nav ── */}
-      <nav style={{
-        position: 'fixed', right: '40px', top: '50%', transform: 'translateY(-50%)',
-        zIndex: 100, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '20px',
-      }} className="page-right-nav">
-        <NavLink to="/portfolio" label="PORTFOLIO" />
-        <NavLink to="/about" label="ABOUT ME" />
-        <NavLink to="/my-shots" label="MY SHOTS" />
-        <NavLink to="/contact" label="CONTACT" />
-      </nav>
-
       {/* ── Hero: MY [IMAGE] SHOTS ── */}
       <section style={{
         padding: 'clamp(80px,10vw,140px) clamp(18px,4vw,40px) clamp(40px,5vw,60px)',
@@ -117,7 +91,11 @@ export default function MyShotsPage() {
               width: 'clamp(80px,14vw,180px)', height: 'clamp(60px,8vw,110px)',
               borderRadius: '8px', overflow: 'hidden', backgroundColor: '#ddd', margin: '0 8px',
             }}>
-              <div style={{ width: '100%', height: '100%', background: 'linear-gradient(135deg,#b8c8d8,#90a0b0)' }} />
+              {myshots?.myshots_image ? (
+                <img src={myshots.myshots_image} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+              ) : (
+                <div style={{ width: '100%', height: '100%', background: 'linear-gradient(135deg,#b8c8d8,#90a0b0)' }} />
+              )}
             </div>
             <h1 style={{
               fontFamily: '"Geist",sans-serif', fontSize: 'clamp(48px,10vw,130px)', fontWeight: 700,
@@ -137,7 +115,11 @@ export default function MyShotsPage() {
               width: '100%', height: '200px',
               borderRadius: '8px', overflow: 'hidden', backgroundColor: '#ddd',
             }}>
-              <div style={{ width: '100%', height: '100%', background: 'linear-gradient(135deg,#b8c8d8,#90a0b0)' }} />
+              {myshots?.myshots_image ? (
+                <img src={myshots.myshots_image} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+              ) : (
+                <div style={{ width: '100%', height: '100%', background: 'linear-gradient(135deg,#b8c8d8,#90a0b0)' }} />
+              )}
             </div>
           </motion.div>
 

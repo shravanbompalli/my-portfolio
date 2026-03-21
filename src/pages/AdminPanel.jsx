@@ -1008,6 +1008,14 @@ export default function AdminPanel() {
 
         {/* ═══ MY SHOTS ═══ */}
         <Section title="📸 My Shots" badge={shots.length}>
+          <p style={{ fontFamily: '"Geist",sans-serif', fontSize: '11px', color: gray, margin: '0 0 6px', textTransform: 'uppercase' }}>My Shots Page Heading Image</p>
+          <ImageUploader
+            value={settings.myshots?.value?.myshots_image}
+            folder="myshots"
+            label="My Shots heading photo"
+            onUpload={url => saveImage('myshots', 'myshots_image', url)}
+          />
+          <div style={{ marginTop: '20px' }} />
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: '10px' }}>
             {shots.map((s, i) => (
               <div key={s.id} style={{ borderRadius: '10px', overflow: 'hidden', border: `1px solid ${border}`, backgroundColor: '#0d0d0d' }}>
