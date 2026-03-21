@@ -146,7 +146,6 @@ export default function ContactPage() {
           <div
             className="contact-info-panel"
             style={{
-              flex: '1 1 300px', minWidth: '260px',
               backgroundColor: '#fff', borderRadius: '12px', padding: 'clamp(20px, 3vw, 40px)',
               border: '1px solid rgba(0,0,0,0.06)',
             }}
@@ -208,7 +207,6 @@ export default function ContactPage() {
           <div
             className="contact-form-panel"
             style={{
-              flex: '1.5 1 350px', minWidth: '280px',
               backgroundColor: '#000', borderRadius: '12px', padding: 'clamp(20px, 3vw, 40px)',
             }}
           >
@@ -293,8 +291,9 @@ export default function ContactPage() {
 
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ ...spring, delay: 0.6 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, amount: 0.5 }}
+                  transition={{ ...spring, delay: 0.16 }}
                 >
                   <motion.button
                     whileHover={{ scale: 1.02, backgroundColor: '#ff6a2a' }}
