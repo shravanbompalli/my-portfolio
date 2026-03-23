@@ -128,13 +128,17 @@ function ParallaxImage({ src, alt, aspect, i, isHovered, isMobile }) {
     target: ref,
     offset: ['start end', 'end start'],
   })
-  // Each image moves at a slightly different speed
-  const y = useTransform(scrollYProgress, [0, 1], [30 + (i % 3) * 10, -30 - (i % 3) * 10])
+  // Mobile: tighter range so image drifts subtly inside single-column cards
+  // Desktop: wider range for masonry depth effect
+  const yRange = isMobile
+    ? [12 + (i % 3) * 4, -12 - (i % 3) * 4]
+    : [30 + (i % 3) * 10, -30 - (i % 3) * 10]
+  const y = useTransform(scrollYProgress, [0, 1], yRange)
 
   return (
     <div ref={ref} style={{ overflow: 'hidden' }}>
       <motion.div
-        style={{ y: isMobile ? 0 : y }}
+        style={{ y }}
         animate={{
           scale: isHovered ? 1.1 : 1.02,
           filter: isHovered ? 'saturate(1.1) brightness(1.02)' : 'saturate(1) brightness(1)',
