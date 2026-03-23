@@ -15,14 +15,16 @@ const spring = { type: 'spring', stiffness: 70, damping: 12, mass: 0.8 }
 function AnimatedHeading({ text, style, animStyle }) {
   if (animStyle === 'blur') {
     return (
-      <BlurText
-        text={text}
-        animateBy="words"
-        direction="bottom"
-        delay={80}
-        stepDuration={0.5}
-        className=""
-      />
+      <div style={style} className="anim-heading-blur">
+        <BlurText
+          text={text}
+          animateBy="words"
+          direction="bottom"
+          delay={80}
+          stepDuration={0.5}
+          className=""
+        />
+      </div>
     )
   }
   if (animStyle === 'gradient') {
@@ -536,6 +538,15 @@ export default function ProjectDetailPage() {
       <Footer />
 
       <style>{`
+        .anim-heading-blur p {
+          font-size: inherit !important;
+          font-weight: inherit !important;
+          letter-spacing: inherit !important;
+          line-height: inherit !important;
+          color: inherit !important;
+          font-family: inherit !important;
+          margin: 0 0 20px !important;
+        }
         @media (max-width: 809px) {
           .project-info-grid { flex-direction: column !important; gap: 32px !important; }
           .project-info-grid > div:last-child { flex: 1 1 100% !important; padding-top: 0 !important; }

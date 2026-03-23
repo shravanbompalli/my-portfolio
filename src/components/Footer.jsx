@@ -235,6 +235,7 @@ export default function Footer() {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                   <FooterNavLink to="/" label="Home" />
                   <FooterNavLink to="/portfolio" label="Portfolio" />
+                  <FooterNavLink to="/about" label="About" />
                   <FooterNavLink to="/my-shots" label="My Shots" />
                   <FooterNavLink to="/contact" label="Contact" />
                 </div>
