@@ -52,10 +52,14 @@ export default function Home() {
   const [isMobile, setIsMobile] = useState(
     typeof window !== 'undefined' ? window.matchMedia('(max-width: 809px)').matches : false
   )
+  const isMobileRef = useRef(
+    typeof window !== 'undefined' ? window.matchMedia('(max-width: 809px)').matches : false
+  )
   useEffect(() => {
     const mq = window.matchMedia('(max-width: 809px)')
-    const handler = (e) => setIsMobile(e.matches)
+    const handler = (e) => { setIsMobile(e.matches); isMobileRef.current = e.matches }
     mq.addEventListener('change', handler)
+    isMobileRef.current = mq.matches
     setIsMobile(mq.matches)
     return () => mq.removeEventListener('change', handler)
   }, [])
@@ -83,8 +87,10 @@ export default function Home() {
   }, [])
 
   // Scroll parallax — direct rAF, 60fps, no CSS transitions, no drift
+  // Disabled on mobile to prevent interference with page exit animations
   useEffect(() => {
     function onScroll() {
+      if (isMobileRef.current) return
       if (rafRef.current) return
       rafRef.current = requestAnimationFrame(() => {
         rafRef.current = null

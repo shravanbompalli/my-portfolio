@@ -103,13 +103,15 @@ function CinematicReveal({ children, delay = 0 }) {
   )
 }
 
-/* ── Parallax image — drifts on scroll ── */
+/* ── Parallax image — drifts on scroll (desktop only) ── */
 function ParallaxMedia({ children, speed = 0.08 }) {
   const wrapRef = useRef()
   const innerRef = useRef()
   const rafRef = useRef()
+  const isMobile = typeof window !== 'undefined' && window.matchMedia('(max-width: 809px)').matches
 
   useEffect(() => {
+    if (isMobile) return // skip parallax on mobile — prevents jank
     function onScroll() {
       if (rafRef.current) return
       rafRef.current = requestAnimationFrame(() => {
@@ -126,11 +128,11 @@ function ParallaxMedia({ children, speed = 0.08 }) {
       window.removeEventListener('scroll', onScroll)
       if (rafRef.current) cancelAnimationFrame(rafRef.current)
     }
-  }, [speed])
+  }, [speed, isMobile])
 
   return (
     <div ref={wrapRef} style={{ width: '100%', height: '100%', overflow: 'hidden' }}>
-      <div ref={innerRef} style={{ width: '100%', height: '108%', willChange: 'transform', marginTop: '-4%' }}>
+      <div ref={innerRef} style={{ width: '100%', height: isMobile ? '100%' : '108%', willChange: isMobile ? 'auto' : 'transform', marginTop: isMobile ? '0' : '-4%' }}>
         {children}
       </div>
     </div>
@@ -548,6 +550,7 @@ export default function ProjectDetailPage() {
           margin: 0 0 20px !important;
         }
         @media (max-width: 809px) {
+          .nav-contact, .nav-info { display: none !important; }
           .project-info-grid { flex-direction: column !important; gap: 32px !important; }
           .project-info-grid > div:last-child { flex: 1 1 100% !important; padding-top: 0 !important; }
           .gallery-grid { grid-template-columns: 1fr !important; }

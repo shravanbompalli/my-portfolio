@@ -37,6 +37,11 @@ html {
   scroll-behavior: smooth;
 }
 
+/* Scroll progress bar — desktop only */
+@media (max-width: 809px) {
+  .scroll-progress-bar { display: none !important; }
+}
+
 /* Hide page-navbar side columns on tablet + mobile — floating hamburger handles nav there */
 @media (max-width: 1279px) {
   .nav-contact,

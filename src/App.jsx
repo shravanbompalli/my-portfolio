@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom'
 import { useState, useEffect, useRef } from 'react'
+import { motion, useScroll, useSpring } from 'framer-motion'
 import Lenis from 'lenis'
 import CustomCursor from './components/CustomCursor'
 import Navbar from './components/Navbar'
@@ -94,6 +95,30 @@ function TransitionCurtain({ phase }) {
   )
 }
 
+/* Scroll progress bar — fixed at top, fills left→right as user scrolls */
+function ScrollProgressBar({ hide }) {
+  const { scrollYProgress } = useScroll()
+  const scaleX = useSpring(scrollYProgress, { stiffness: 100, damping: 30, restDelta: 0.001 })
+
+  return (
+    <motion.div
+      className="scroll-progress-bar"
+      style={{
+        position: 'fixed',
+        top: 0, left: 0, right: 0,
+        height: '3px',
+        backgroundColor: '#ff4d00',
+        transformOrigin: '0% 50%',
+        scaleX,
+        zIndex: 99997,
+        boxShadow: '0 0 8px rgba(255, 77, 0, 0.35)',
+        opacity: hide ? 0 : 1,
+        transition: 'opacity 0.2s ease',
+      }}
+    />
+  )
+}
+
 function PageTransitions() {
   const location = useLocation()
   const [displayLocation, setDisplayLocation] = useState(location)
@@ -144,6 +169,9 @@ function PageTransitions() {
 
   return (
     <>
+      {/* Scroll progress bar — hidden during route transitions */}
+      <ScrollProgressBar hide={phase !== 'idle'} />
+
       {/* Orange progress bar — now just a thin accent line during transition */}
       <div style={{
         position: 'fixed',

@@ -364,9 +364,9 @@ export default function AdminPanel() {
           </h1>
           <p style={{ fontFamily: '"Geist",sans-serif', fontSize: '14px', color: gray, textAlign: 'center', margin: '0 0 24px' }}>Enter password to continue</p>
           <Input value={pw} onChange={setPw} placeholder="Password" type="password"
-            onKeyDown={e => e.key === 'Enter' && (pw === ADMIN_PW ? setAuthed(true) : alert('Wrong password. Please try again.'))} />
+            onKeyDown={e => e.key === 'Enter' && (pw === ADMIN_PW ? setAuthed(true) : showToast('Wrong password. Please try again.', 'error'))} />
           <div style={{ marginTop: '16px' }}>
-            <Btn onClick={() => pw === ADMIN_PW ? setAuthed(true) : alert('Wrong password. Please try again.')} fullWidth>Enter Dashboard</Btn>
+            <Btn onClick={() => pw === ADMIN_PW ? setAuthed(true) : showToast('Wrong password. Please try again.', 'error')} fullWidth>Enter Dashboard</Btn>
           </div>
         </div>
       </div>
@@ -812,7 +812,7 @@ export default function AdminPanel() {
                 <div>
                   <p style={{ fontFamily: '"Geist",sans-serif', fontSize: '11px', color: '#a855f7', margin: '0 0 6px', textTransform: 'uppercase' }}>🎬 Project Video</p>
                   <VideoUploader value={p.video_url} label="Project video" height="140px"
-                    onUpload={url => { const u = [...projects]; u[i].video_url = url; setProjects(u) }} />
+                    onUpload={url => { const u = [...projects]; u[i] = { ...u[i], video_url: url }; setProjects(u); saveRow('projects', u[i]) }} />
                 </div>
               </div>
 
@@ -877,7 +877,7 @@ export default function AdminPanel() {
                               const u = [...projects]
                               const vids = [...(u[i].gallery_videos || [])]
                               vids[vi] = { ...vids[vi], embed_url: e.target.value }
-                              u[i].gallery_videos = vids
+                              u[i] = { ...u[i], gallery_videos: vids }
                               setProjects(u)
                             }}
                             style={{ width: '100%', fontFamily: '"Geist",sans-serif', fontSize: '12px', color: white, backgroundColor: '#0d0d0d', border: `1px solid ${border}`, borderRadius: '6px', padding: '8px', outline: 'none', boxSizing: 'border-box' }}
@@ -895,7 +895,7 @@ export default function AdminPanel() {
                             const u = [...projects]
                             const vids = [...(u[i].gallery_videos || [])]
                             vids[vi] = { ...vids[vi], aspect_ratio: e.target.value }
-                            u[i].gallery_videos = vids
+                            u[i] = { ...u[i], gallery_videos: vids }
                             setProjects(u)
                           }}
                           style={{ width: '100%', marginTop: '8px', fontFamily: '"Geist",sans-serif', fontSize: '12px', color: white, backgroundColor: '#0d0d0d', border: `1px solid ${border}`, borderRadius: '6px', padding: '8px', outline: 'none' }}
@@ -909,7 +909,7 @@ export default function AdminPanel() {
                       <div style={{ marginTop: '8px' }}>
                       <Btn onClick={async () => {
                           const u = [...projects]
-                          u[i].gallery_videos = (u[i].gallery_videos || []).filter((_, idx) => idx !== vi)
+                          u[i] = { ...u[i], gallery_videos: (u[i].gallery_videos || []).filter((_, idx) => idx !== vi) }
                           setProjects(u)
                           await saveRow('projects', u[i])
                         }} variant="danger" small>Remove</Btn>
@@ -918,7 +918,7 @@ export default function AdminPanel() {
                   ))}
                   <Btn variant="ghost" small onClick={() => {
                     const u = [...projects]
-                    u[i].gallery_videos = [...(u[i].gallery_videos || []), { url: '', aspect_ratio: '16:9' }]
+                    u[i] = { ...u[i], gallery_videos: [...(u[i].gallery_videos || []), { url: '', aspect_ratio: '16:9' }] }
                     setProjects(u)
                   }}>+ Add Gallery Video</Btn>
                 </div>
@@ -954,7 +954,7 @@ export default function AdminPanel() {
                               const u = [...projects]
                               const imgs = [...(u[i].gallery_images || [])]
                               imgs[gi] = { url: imgUrl, aspect_ratio: e.target.value }
-                              u[i].gallery_images = imgs
+                              u[i] = { ...u[i], gallery_images: imgs }
                               setProjects(u)
                             }}
                             style={{ width: '100%', fontFamily: '"Geist",sans-serif', fontSize: '10px', color: gray, backgroundColor: '#0d0d0d', border: `1px solid ${border}`, borderRadius: '4px', padding: '4px', outline: 'none' }}
@@ -968,7 +968,7 @@ export default function AdminPanel() {
                           <div style={{ marginTop: '4px' }}>
                           <Btn onClick={async () => {
                               const u = [...projects]
-                              u[i].gallery_images = (u[i].gallery_images || []).filter((_, idx) => idx !== gi)
+                              u[i] = { ...u[i], gallery_images: (u[i].gallery_images || []).filter((_, idx) => idx !== gi) }
                               setProjects(u)
                               await saveRow('projects', u[i])
                             }} variant="danger" small>×</Btn>
@@ -981,7 +981,7 @@ export default function AdminPanel() {
                     <div
                       onClick={() => {
                         const u = [...projects]
-                        u[i].gallery_images = [...(u[i].gallery_images || []), { url: '', aspect_ratio: '16:9' }]
+                        u[i] = { ...u[i], gallery_images: [...(u[i].gallery_images || []), { url: '', aspect_ratio: '16:9' }] }
                         setProjects(u)
                       }}
                       style={{ height: '120px', borderRadius: '10px', border: `2px dashed ${border}`, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', gap: '4px', transition: 'border-color 0.2s' }}
@@ -1077,7 +1077,7 @@ export default function AdminPanel() {
               </div>
               <div style={{ marginTop: '10px' }}>
                 <ImageUploader value={r.avatar_url} folder="reviews" label="Avatar" height="70px"
-                  onUpload={url => { const u = [...reviews]; u[i].avatar_url = url; setReviews(u) }} />
+                  onUpload={url => { const u = [...reviews]; u[i] = { ...u[i], avatar_url: url }; setReviews(u); saveRow('reviews', u[i]) }} />
               </div>
               <div style={{ display: 'flex', gap: '8px', marginTop: '10px' }}>
                 <Btn onClick={() => saveRow('reviews', reviews[i])} small>Save</Btn>

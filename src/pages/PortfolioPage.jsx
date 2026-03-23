@@ -65,14 +65,14 @@ export default function PortfolioPage() {
           animate={{ opacity: 1, y: 0 }}
           transition={spring}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0', flexWrap: 'wrap', marginBottom: '24px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0', flexWrap: 'nowrap', marginBottom: '24px' }}>
             <h1 style={{
               fontFamily: '"Geist",sans-serif', fontSize: 'clamp(48px,10vw,130px)', fontWeight: 700,
               letterSpacing: '-0.04em', lineHeight: 1, color: '#000', margin: 0,
             }}>
               PORT
             </h1>
-            <div style={{
+            <div className="portfolio-inline-image" style={{
               width: 'clamp(80px,12vw,160px)', height: 'clamp(60px,8vw,100px)',
               borderRadius: '8px', overflow: 'hidden', backgroundColor: '#ddd',
               margin: '0 4px',
@@ -89,6 +89,18 @@ export default function PortfolioPage() {
             }}>
               FOLIO
             </h1>
+          </div>
+
+          {/* Mobile-only full-width image — shown below headline on phone */}
+          <div className="portfolio-mobile-image" style={{
+            width: '100%', height: '200px', borderRadius: '8px',
+            overflow: 'hidden', backgroundColor: '#ddd', marginBottom: '8px',
+          }}>
+            {portfolio?.portfolio_image ? (
+              <img src={portfolio.portfolio_image} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+            ) : (
+              <div style={{ width: '100%', height: '100%', background: 'linear-gradient(135deg,#c8d8d8,#a0b0b0)' }} />
+            )}
           </div>
         </motion.div>
 
@@ -122,6 +134,15 @@ export default function PortfolioPage() {
       <Portfolio />
 
       <Footer />
+
+      <style>{`
+        .portfolio-mobile-image { display: none; }
+        @media (max-width: 809px) {
+          .nav-contact, .nav-info { display: none !important; }
+          .portfolio-inline-image { display: none !important; }
+          .portfolio-mobile-image { display: block !important; }
+        }
+      `}</style>
     </div>
   )
 }

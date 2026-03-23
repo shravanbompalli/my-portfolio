@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { supabase } from '../lib/supabase'
+import Footer from '../components/Footer'
 import BlurText from '../components/reactbits/BlurText'
 import FadeReveal from '../components/reactbits/FadeReveal'
 
@@ -70,12 +71,12 @@ export default function ContactPage() {
       </div>
 
       {/* ── Hero: full-bleed image ── */}
-      <section style={{ position: 'relative', height: '100vh', overflow: 'hidden', backgroundColor: '#000' }}>
+      <section style={{ position: 'relative', height: '100dvh', overflow: 'hidden', backgroundColor: '#000' }}>
         {/* Background image */}
         <motion.div
-          initial={{ scale: 1.05 }}
+          initial={{ scale: 1.08 }}
           animate={{ scale: 1 }}
-          transition={{ type: 'spring', stiffness: 60, damping: 14 }}
+          transition={{ type: 'spring', stiffness: 40, damping: 10 }}
           style={{ position: 'absolute', inset: 0 }}
         >
           {contact?.contact_image ? (
@@ -90,7 +91,12 @@ export default function ContactPage() {
         </motion.div>
 
         {/* Dark overlay */}
-        <div style={{ position: 'absolute', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 1 }} />
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 1.2, ease: 'easeOut', delay: 0.2 }}
+          style={{ position: 'absolute', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 1 }}
+        />
 
         {/* Content */}
         <div style={{
@@ -135,10 +141,29 @@ export default function ContactPage() {
       </section>
 
       {/* ── Contact Form ── */}
-      <section style={{
-        padding: 'clamp(40px, 8vw, 100px) clamp(16px, 4vw, 40px)',
-        maxWidth: '1400px', margin: '0 auto',
-      }}>
+      <motion.section
+        initial={{ opacity: 0, y: 40 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, amount: 0.1 }}
+        transition={{ type: 'spring', stiffness: 50, damping: 14 }}
+        style={{
+          padding: 'clamp(40px, 8vw, 100px) clamp(16px, 4vw, 40px)',
+          maxWidth: '1400px', margin: '0 auto',
+        }}
+      >
+        <motion.p
+          initial={{ opacity: 0, y: 16 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.5 }}
+          transition={{ type: 'spring', stiffness: 60, damping: 14, delay: 0.1 }}
+          style={{
+            fontFamily: '"Geist", sans-serif', fontSize: '12px',
+            letterSpacing: '0.15em', textTransform: 'uppercase',
+            color: '#aaa', margin: '0 0 clamp(24px, 4vw, 48px)',
+          }}
+        >
+          Reach Out
+        </motion.p>
         <div className="contact-grid" style={{ display: 'flex', flexWrap: 'wrap', gap: 'clamp(24px, 4vw, 60px)' }}>
 
           {/* Left — Info */}
@@ -150,14 +175,26 @@ export default function ContactPage() {
               border: '1px solid rgba(0,0,0,0.06)',
             }}
           >
-            <p style={{
-              fontFamily: '"Geist",sans-serif', fontSize: 'clamp(14px, 1.5vw, 16px)', color: '#404040',
-              lineHeight: 1.6, margin: '0 0 32px',
-            }}>
+            <motion.p
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, amount: 0.4 }}
+              transition={{ type: 'spring', stiffness: 60, damping: 14, delay: 0.05 }}
+              style={{
+                fontFamily: '"Geist",sans-serif', fontSize: 'clamp(14px, 1.5vw, 16px)', color: '#404040',
+                lineHeight: 1.6, margin: '0 0 32px',
+              }}
+            >
               Whether it's a portrait, event, or brand shoot, your vision deserves the best.
               Send me a message and I'll get back to you <span style={{ color: '#ff4d00', fontWeight: 500 }}>within 48 hours.</span>
-            </p>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+            </motion.p>
+            <motion.div
+              initial={{ opacity: 0, y: 16 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, amount: 0.4 }}
+              transition={{ type: 'spring', stiffness: 60, damping: 14, delay: 0.15 }}
+              style={{ display: 'flex', alignItems: 'center', gap: '14px' }}
+            >
               <div style={{
                 width: '52px', height: '52px', borderRadius: '50%', overflow: 'hidden',
                 backgroundColor: '#ddd', flexShrink: 0,
@@ -172,11 +209,17 @@ export default function ContactPage() {
                 <p style={{ fontFamily: '"Geist",sans-serif', fontSize: '16px', fontWeight: 500, color: '#000', margin: 0 }}>{brand?.name || 'Shravan Bompalli'}</p>
                 <p style={{ fontFamily: '"Geist",sans-serif', fontSize: '14px', color: '#aaa', margin: 0 }}>{brand?.title || 'Cinematographer'}</p>
               </div>
-            </div>
+            </motion.div>
 
             {/* Social links */}
             {(social?.instagram || social?.youtube) && (
-              <div style={{ marginTop: '24px', display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+              <motion.div
+                initial={{ opacity: 0, y: 16 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, amount: 0.4 }}
+                transition={{ type: 'spring', stiffness: 60, damping: 14, delay: 0.25 }}
+                style={{ marginTop: '24px', display: 'flex', gap: '12px', flexWrap: 'wrap' }}
+              >
                 {social?.instagram && (
                   <a href={social.instagram} target="_blank" rel="noopener" style={{
                     fontFamily: '"Geist",sans-serif', fontSize: '14px', fontWeight: 500,
@@ -197,7 +240,7 @@ export default function ContactPage() {
                     onMouseLeave={e => { e.currentTarget.style.backgroundColor = '#f5f5f5'; e.currentTarget.style.color = '#000' }}
                   >YouTube</a>
                 )}
-              </div>
+              </motion.div>
             )}
           </div>
           </FadeReveal>
@@ -315,7 +358,9 @@ export default function ContactPage() {
           </div>
           </FadeReveal>
         </div>
-      </section>
+      </motion.section>
+
+      <Footer />
 
       <style>{`
         .contact-headline-wrap p {

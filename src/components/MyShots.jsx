@@ -440,6 +440,7 @@ function ShotsSection({ shots, limit, title, subtitle, hasMore }) {
       </div>
 
       <style>{`
+        @media (min-width: 810px) and (max-width: 1279px) { .shots-grid { columns: 2 !important; } }
         @media (max-width: 809px) { .shots-grid { columns: 1 !important; } }
       `}</style>
     </section>

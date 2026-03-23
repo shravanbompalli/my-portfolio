@@ -15,13 +15,19 @@ function ToolsSection({ tools }) {
       padding: 'clamp(60px, 8vw, 100px) clamp(18px, 4vw, 40px)',
     }}>
       <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
-        <p style={{
-          fontFamily: '"Geist", sans-serif', fontSize: '12px',
-          letterSpacing: '0.15em', textTransform: 'uppercase',
-          color: '#aaa', margin: '0 0 32px',
-        }}>
+        <motion.p
+          initial={{ opacity: 0, y: 16 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.5 }}
+          transition={{ type: 'spring', stiffness: 60, damping: 14 }}
+          style={{
+            fontFamily: '"Geist", sans-serif', fontSize: '12px',
+            letterSpacing: '0.15em', textTransform: 'uppercase',
+            color: '#aaa', margin: '0 0 32px',
+          }}
+        >
           Tools &amp; Gear
-        </p>
+        </motion.p>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px' }}>
           {tools.map((tool, i) => (
             <FadeReveal key={tool} delay={i * 0.05}>
@@ -98,12 +104,12 @@ export default function AboutPage() {
       </div>
 
       {/* ── Hero: full-bleed image ── */}
-      <section style={{ position: 'relative', height: '100vh', overflow: 'hidden', backgroundColor: '#000' }}>
+      <section style={{ position: 'relative', height: '100dvh', overflow: 'hidden', backgroundColor: '#000' }}>
         {/* Background image */}
         <motion.div
-          initial={{ scale: 1.05 }}
+          initial={{ scale: 1.08 }}
           animate={{ scale: 1 }}
-          transition={{ type: 'spring', stiffness: 60, damping: 14 }}
+          transition={{ type: 'spring', stiffness: 40, damping: 10 }}
           style={{ position: 'absolute', inset: 0 }}
         >
           {about?.about_image ? (
@@ -118,7 +124,12 @@ export default function AboutPage() {
         </motion.div>
 
         {/* Dark overlay */}
-        <div style={{ position: 'absolute', inset: 0, backgroundColor: 'rgba(0,0,0,0.45)', zIndex: 1 }} />
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 1.2, ease: 'easeOut', delay: 0.2 }}
+          style={{ position: 'absolute', inset: 0, backgroundColor: 'rgba(0,0,0,0.45)', zIndex: 1 }}
+        />
 
         {/* Content */}
         <div style={{
