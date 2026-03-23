@@ -4,8 +4,61 @@ import { motion, useScroll, useTransform } from 'framer-motion'
 import { supabase } from '../lib/supabase'
 import Footer from '../components/Footer'
 import CircularGallery from '../components/CircularGallery'
+import BlurText from '../components/reactbits/BlurText'
+import GradientText from '../components/reactbits/GradientText'
+import FuzzyText from '../components/reactbits/FuzzyText'
+import FadeReveal from '../components/reactbits/FadeReveal'
 
 const spring = { type: 'spring', stiffness: 70, damping: 12, mass: 0.8 }
+
+/* ── Animated heading — swaps style based on site_settings.animations.heading ── */
+function AnimatedHeading({ text, style, animStyle }) {
+  if (animStyle === 'blur') {
+    return (
+      <BlurText
+        text={text}
+        animateBy="words"
+        direction="bottom"
+        delay={80}
+        stepDuration={0.5}
+        className=""
+      />
+    )
+  }
+  if (animStyle === 'gradient') {
+    return (
+      <GradientText
+        colors={['#ff4d00', '#000', '#ff4d00']}
+        animationSpeed={6}
+        className=""
+      >
+        <span style={style}>{text}</span>
+      </GradientText>
+    )
+  }
+  if (animStyle === 'fuzzy') {
+    return (
+      <FuzzyText
+        fontSize={style?.fontSize || 'clamp(32px,5vw,56px)'}
+        fontWeight={style?.fontWeight || 600}
+        color="#000"
+        baseIntensity={0.12}
+        hoverIntensity={0.4}
+      >
+        {text}
+      </FuzzyText>
+    )
+  }
+  if (animStyle === 'fade') {
+    return (
+      <FadeReveal>
+        <h1 style={style}>{text}</h1>
+      </FadeReveal>
+    )
+  }
+  // 'none' or anything else — plain
+  return <h1 style={style}>{text}</h1>
+}
 
 /* ── Aspect ratio string to CSS value ── */
 function getRatio(ar) {
@@ -200,6 +253,7 @@ export default function ProjectDetailPage() {
   const [allProjects, setAllProjects] = useState([])
   const [brand, setBrand] = useState(null)
   const [contact, setContact] = useState(null)
+  const [headingAnim, setHeadingAnim] = useState('blur')
   const coverRef = useRef()
 
   useEffect(() => {
@@ -218,11 +272,12 @@ export default function ProjectDetailPage() {
       const { data: settings } = await supabase
         .from('site_settings')
         .select('key, value')
-        .in('key', ['brand', 'contact'])
+        .in('key', ['brand', 'contact', 'animations'])
       if (settings) {
         settings.forEach(r => {
           if (r.key === 'brand') setBrand(r.value)
           if (r.key === 'contact') setContact(r.value)
+          if (r.key === 'animations') setHeadingAnim(r.value?.heading || 'blur')
         })
       }
     }
@@ -316,10 +371,14 @@ export default function ProjectDetailPage() {
               color: '#fff', backgroundColor: '#000', padding: '6px 14px',
               borderRadius: '40px', display: 'inline-block', marginBottom: '20px',
             }}>{project.category}</span>
-            <h1 style={{
-              fontFamily: '"Geist",sans-serif', fontSize: 'clamp(32px,5vw,56px)',
-              fontWeight: 600, letterSpacing: '-0.03em', lineHeight: 1.1, color: '#000', margin: '0 0 20px',
-            }}>{project.title}</h1>
+            <AnimatedHeading
+              text={project.title}
+              animStyle={headingAnim}
+              style={{
+                fontFamily: '"Geist",sans-serif', fontSize: 'clamp(32px,5vw,56px)',
+                fontWeight: 600, letterSpacing: '-0.03em', lineHeight: 1.1, color: '#000', margin: '0 0 20px',
+              }}
+            />
             <p style={{
               fontFamily: '"Geist",sans-serif', fontSize: 'clamp(15px,1.5vw,18px)',
               fontWeight: 400, color: '#404040', lineHeight: 1.7, margin: 0, maxWidth: '600px',

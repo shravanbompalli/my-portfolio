@@ -71,10 +71,10 @@ export default function Hero() {
 
         const scrolled = window.scrollY
         if (contentRef.current) {
-          contentRef.current.style.transform = `translateY(${scrolled * -0.15}px)`
+          contentRef.current.style.transform = `translateY(${scrolled * -0.3}px)`
         }
         if (bgRef.current && loadedRef.current) {
-          bgRef.current.style.transform = `scale(1) translateY(${scrolled * 0.3}px)`
+          bgRef.current.style.transform = `scale(1.1) translateY(${scrolled * 0.5}px)`
         }
       })
     }
@@ -115,7 +115,7 @@ export default function Hero() {
       {/* BG — Video or Image based on hero_mode toggle */}
       <figure ref={bgRef} className="absolute inset-0"
         style={{
-          transform: loaded ? 'scale(1)' : 'scale(1.5)',
+          transform: loaded ? 'scale(1.1)' : 'scale(1.5)',
           transition: loaded ? 'none' : 'transform 1.5s cubic-bezier(0.34, 1.56, 0.64, 1) 0.3s',
           willChange: 'transform',
           margin: 0,

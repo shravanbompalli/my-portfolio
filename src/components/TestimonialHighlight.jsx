@@ -27,8 +27,6 @@ export default function TestimonialHighlight() {
     typeof window !== 'undefined' ? window.matchMedia('(max-width: 809px)').matches : false
   )
   const sectionRef = useRef()
-  const tallImgWrapRef = useRef()
-  const rafRef = useRef()
 
   useEffect(() => {
     async function load() {
@@ -49,24 +47,6 @@ export default function TestimonialHighlight() {
     return () => mq.removeEventListener('change', handler)
   }, [])
 
-  // Parallax — rAF + direct DOM ref, no re-renders
-  useEffect(() => {
-    function onScroll() {
-      if (rafRef.current) return
-      rafRef.current = requestAnimationFrame(() => {
-        rafRef.current = null
-        if (!sectionRef.current || !tallImgWrapRef.current) return
-        const rect = sectionRef.current.getBoundingClientRect()
-        if (rect.bottom <= 0 || rect.top >= window.innerHeight) return
-        tallImgWrapRef.current.style.transform = `translateY(${window.scrollY * 0.1}px)`
-      })
-    }
-    window.addEventListener('scroll', onScroll, { passive: true })
-    return () => {
-      window.removeEventListener('scroll', onScroll)
-      if (rafRef.current) cancelAnimationFrame(rafRef.current)
-    }
-  }, [])
 
   if (!t) return null
 
@@ -232,7 +212,7 @@ export default function TestimonialHighlight() {
           </motion.div>
 
           {/* Image 1 — tall portrait, RIGHT, overlaps hero — ANIMATED: rises up slowly */}
-          <div ref={tallImgWrapRef} style={{ flex: '1 1 55%', willChange: 'transform' }}>
+          <div style={{ flex: '1 1 55%' }}>
           <motion.div
             initial={isMobile ? { opacity: 0, scale: 0.95 } : { opacity: 0, y: 200, rotate: 3, scale: 0.9 }}
             whileInView={isMobile ? { opacity: 1, scale: 1 } : { opacity: 1, y: 0, rotate: 0, scale: 1 }}

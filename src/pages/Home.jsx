@@ -7,6 +7,7 @@ import Services from '../components/Services'
 import Portfolio from '../components/Portfolio'
 import MyShots from '../components/MyShots'
 import Footer from '../components/Footer'
+import GradientText from '../components/reactbits/GradientText'
 
 /* ── Shared NavLink (slide-up orange hover) ── */
 function NavLink({ to, label, dark }) {
@@ -43,6 +44,10 @@ export default function Home() {
   const [awards, setAwards] = useState(null)
   const [loaded, setLoaded] = useState(false)
   const dataLoaded = useRef(false)
+  const heroRef = useRef()
+  const bgRef = useRef()
+  const contentRef = useRef()
+  const rafRef = useRef()
 
   const [isMobile, setIsMobile] = useState(
     typeof window !== 'undefined' ? window.matchMedia('(max-width: 809px)').matches : false
@@ -77,17 +82,50 @@ export default function Home() {
     load()
   }, [])
 
+  // Scroll parallax — direct rAF, 60fps, no CSS transitions, no drift
+  useEffect(() => {
+    function onScroll() {
+      if (rafRef.current) return
+      rafRef.current = requestAnimationFrame(() => {
+        rafRef.current = null
+        if (!heroRef.current) return
+        const rect = heroRef.current.getBoundingClientRect()
+        if (rect.bottom <= 0) return
+        const s = window.scrollY
+        if (contentRef.current) {
+          contentRef.current.style.transform = `translateY(${s * -0.15}px)`
+        }
+        if (bgRef.current) {
+          bgRef.current.style.transform = `scale(1.1) translateY(${s * 0.3}px)`
+        }
+      })
+    }
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => {
+      window.removeEventListener('scroll', onScroll)
+      if (rafRef.current) cancelAnimationFrame(rafRef.current)
+    }
+  }, [])
+
+  // Resolved text color for all hero elements
+  const tc = hero?.text_color === 'orange' ? '#ff4d00'
+           : hero?.text_color === 'gold'   ? '#d4a843'
+           : '#fff'
+  const isGradient = hero?.text_color === 'gradient'
+  const isWhite    = !hero?.text_color || hero?.text_color === 'white'
+
   return (
     <div>
       {/* ══════════════ SECTION 1: HERO ══════════════ */}
-      <section style={{
+      <section ref={heroRef} style={{
         position: 'relative', width: '100%', height: '100vh',
         overflow: 'hidden', backgroundColor: '#000',
       }}>
-        <figure style={{
+        <figure ref={bgRef} style={{
           position: 'absolute', inset: 0, margin: 0,
-          transform: loaded ? 'scale(1)' : 'scale(1.5)',
-          transition: 'transform 1.5s cubic-bezier(0.34,1.56,0.64,1) 0.3s',
+          transform: loaded ? 'scale(1.1)' : 'scale(1.5)',
+          transition: 'none',
+          willChange: 'transform',
         }}>
           {hero?.hero_mode === 'video' && hero?.hero_video ? (
             <video
@@ -112,7 +150,7 @@ export default function Home() {
           ))}
         </div>
 
-        <div style={{ position: 'absolute', inset: 0, zIndex: 2, display: 'flex', flexDirection: 'column' }}>
+        <div ref={contentRef} style={{ position: 'absolute', inset: 0, zIndex: 2, display: 'flex', flexDirection: 'column', willChange: 'transform' }}>
           <div style={{
             display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start',
             padding: isMobile ? 'clamp(12px, 4vw, 20px) clamp(16px, 5vw, 40px)' : '20px 40px',
@@ -170,27 +208,36 @@ export default function Home() {
 
           <div style={{ padding: isMobile ? '0 clamp(16px, 5vw, 40px)' : '0 40px' }}>
             <div style={{ opacity: loaded ? 1 : 0, transform: loaded ? 'translateY(0)' : 'translateY(40px)', transition: 'all 0.8s ease 0.6s', marginBottom: '8px' }}>
-              <p style={{ fontFamily: '"Geist",sans-serif', fontSize: 'clamp(18px,2.5vw,28px)', fontWeight: 500, color: '#eee', letterSpacing: '-0.01em', margin: 0 }}>
+              <p style={{ fontFamily: '"Geist",sans-serif', fontSize: 'clamp(18px,2.5vw,28px)', fontWeight: 500, color: isGradient ? '#eee' : tc, letterSpacing: '-0.01em', margin: 0, opacity: 0.85 }}>
                 {hero?.tagline || 'Award-winning creative'}
               </p>
             </div>
             <div style={{ opacity: loaded ? 1 : 0, transform: loaded ? 'translateY(0)' : 'translateY(60px)', transition: 'all 0.8s ease 0.4s' }}>
-              <h1 style={{
-                fontFamily: '"Geist",sans-serif', fontSize: isMobile ? 'clamp(22px, 10vw, 48px)' : 'clamp(48px,12vw,156px)', fontWeight: 700,
-                letterSpacing: '-0.04em', lineHeight: '100%', color: '#fff', mixBlendMode: 'difference', margin: 0,
-              }}>
-                {hero?.headline || 'CINEMATOGRAPHER'}
-              </h1>
+              {isGradient ? (
+                <GradientText colors={['#ffffff', '#ff4d00', '#ffffff']} animationSpeed={6}>
+                  <h1 style={{ fontFamily: '"Geist",sans-serif', fontSize: isMobile ? 'clamp(22px, 10vw, 48px)' : 'clamp(48px,11vw,148px)', fontWeight: 700, letterSpacing: '-0.04em', lineHeight: '100%', margin: 0 }}>
+                    {hero?.headline || 'CINEMATOGRAPHER'}
+                  </h1>
+                </GradientText>
+              ) : (
+                <h1 style={{
+                  fontFamily: '"Geist",sans-serif', fontSize: isMobile ? 'clamp(22px, 10vw, 48px)' : 'clamp(48px,11vw,148px)', fontWeight: 700,
+                  letterSpacing: '-0.04em', lineHeight: '100%', margin: 0,
+                  color: tc, mixBlendMode: isWhite ? 'difference' : 'normal',
+                }}>
+                  {hero?.headline || 'CINEMATOGRAPHER'}
+                </h1>
+              )}
             </div>
           </div>
 
           <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: 'stretch', opacity: loaded ? 1 : 0, transform: loaded ? 'translateY(0)' : 'translateY(-40px)', transition: 'all 0.6s ease 0.8s' }}>
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '8px', padding: isMobile ? '12px 16px' : '16px 40px', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
               {social?.instagram && (
-                <a href={social.instagram} target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#fff', textDecoration: 'none', fontFamily: '"Geist",sans-serif', fontSize: '15px' }}><Arrow /> Instagram</a>
+                <a href={social.instagram} target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', gap: '8px', color: tc, textDecoration: 'none', fontFamily: '"Geist",sans-serif', fontSize: '15px' }}><Arrow /> Instagram</a>
               )}
               {social?.youtube && (
-                <a href={social.youtube} target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#fff', textDecoration: 'none', fontFamily: '"Geist",sans-serif', fontSize: '15px' }}><Arrow /> YouTube</a>
+                <a href={social.youtube} target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', gap: '8px', color: tc, textDecoration: 'none', fontFamily: '"Geist",sans-serif', fontSize: '15px' }}><Arrow /> YouTube</a>
               )}
             </div>
             <div style={{ flex: 1, padding: isMobile ? '12px 16px' : '16px 24px', borderTop: '1px solid rgba(255,255,255,0.05)', borderLeft: isMobile ? 'none' : '1px solid rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center' }}>
@@ -201,8 +248,8 @@ export default function Home() {
             <div style={{ flex: 1, padding: isMobile ? '12px 16px' : '16px 40px', borderTop: '1px solid rgba(255,255,255,0.05)', borderLeft: isMobile ? 'none' : '1px solid rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: isMobile ? 'flex-start' : 'flex-end', gap: '8px' }}>
               <span style={{ fontSize: '24px' }}>🏆</span>
               <div>
-                <p style={{ fontFamily: '"Geist",sans-serif', fontSize: '15px', fontWeight: 500, color: '#fff', margin: 0 }}>{awards?.name || 'Hasselblad Award'}</p>
-                <p style={{ fontFamily: '"Geist",sans-serif', fontSize: '13px', color: '#aaa', margin: 0 }}>{awards?.years || '2025, 2023'}</p>
+                <p style={{ fontFamily: '"Geist",sans-serif', fontSize: '15px', fontWeight: 500, color: tc, margin: 0 }}>{awards?.name || 'Hasselblad Award'}</p>
+                <p style={{ fontFamily: '"Geist",sans-serif', fontSize: '13px', color: tc, margin: 0, opacity: 0.6 }}>{awards?.years || '2025, 2023'}</p>
               </div>
             </div>
           </div>
