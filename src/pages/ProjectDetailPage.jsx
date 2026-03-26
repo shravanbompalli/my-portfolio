@@ -64,7 +64,12 @@ function AnimatedHeading({ text, style, animStyle }) {
 
 /* ── Aspect ratio string to CSS value ── */
 function getRatio(ar) {
-  const map = { '16:9': '16/9', '4:3': '4/3', '1:1': '1/1', '9:16': '9/16', '21:9': '21/9' }
+  if (!ar || ar === 'auto') return 'auto'
+  if (ar.includes('/')) return ar // already CSS format e.g. '16/9', '4/5'
+  const map = {
+    '16:9': '16/9', '4:3': '4/3', '1:1': '1/1', '9:16': '9/16',
+    '21:9': '21/9', '3:4': '3/4', '2:3': '2/3', '4:5': '4/5', '3:2': '3/2',
+  }
   return map[ar] || '16/9'
 }
 
@@ -119,7 +124,7 @@ function ParallaxMedia({ children, speed = 0.08 }) {
         if (!wrapRef.current || !innerRef.current) return
         const rect = wrapRef.current.getBoundingClientRect()
         const centerOffset = rect.top + rect.height / 2 - window.innerHeight / 2
-        innerRef.current.style.transform = `translateY(${centerOffset * speed}px) scale(1.12)`
+        innerRef.current.style.transform = `translateY(${centerOffset * speed}px)`
       })
     }
     window.addEventListener('scroll', onScroll, { passive: true })
@@ -132,7 +137,9 @@ function ParallaxMedia({ children, speed = 0.08 }) {
 
   return (
     <div ref={wrapRef} style={{ width: '100%', height: '100%', overflow: 'hidden' }}>
-      <div ref={innerRef} style={{ width: '100%', height: isMobile ? '100%' : '108%', willChange: isMobile ? 'auto' : 'transform', marginTop: isMobile ? '0' : '-4%' }}>
+      {/* 120% height + -10% marginTop gives 10% overflow buffer each side — enough for parallax
+          without forcing a permanent scale/zoom on the image itself */}
+      <div ref={innerRef} style={{ width: '100%', height: isMobile ? '100%' : '120%', willChange: isMobile ? 'auto' : 'transform', marginTop: isMobile ? '0' : '-10%' }}>
         {children}
       </div>
     </div>
@@ -142,18 +149,29 @@ function ParallaxMedia({ children, speed = 0.08 }) {
 /* ── Video item with PLAY badge ── */
 function VideoItem({ url, embedUrl, aspectRatio, animation, delay }) {
   const [playing, setPlaying] = useState(false)
+  const [iframeActive, setIframeActive] = useState(false)
   const videoRef = useRef()
   const ratio = getRatio(aspectRatio)
 
-  // Extract YouTube/Vimeo embed src
+  // Extract YouTube/Vimeo embed src — whitelist only trusted domains
   function getEmbedSrc(rawUrl) {
     if (!rawUrl) return null
+    let parsed
+    try { parsed = new URL(rawUrl) } catch { return null }
+    if (!['https:', 'http:'].includes(parsed.protocol)) return null
+    const host = parsed.hostname.replace(/^www\./, '')
     // YouTube
-    const ytMatch = rawUrl.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/))([a-zA-Z0-9_-]{11})/)
-    if (ytMatch) return `https://www.youtube.com/embed/${ytMatch[1]}?autoplay=0&rel=0`
+    if (host === 'youtube.com' || host === 'youtu.be') {
+      const v = host === 'youtu.be'
+        ? parsed.pathname.slice(1)
+        : (parsed.searchParams.get('v') || parsed.pathname.replace('/embed/', ''))
+      if (/^[a-zA-Z0-9_-]{11}$/.test(v)) return `https://www.youtube.com/embed/${v}?autoplay=0&rel=0`
+    }
     // Vimeo
-    const vimeoMatch = rawUrl.match(/vimeo\.com\/(\d+)/)
-    if (vimeoMatch) return `https://player.vimeo.com/video/${vimeoMatch[1]}`
+    if (host === 'vimeo.com') {
+      const v = parsed.pathname.replace('/', '')
+      if (/^\d+$/.test(v)) return `https://player.vimeo.com/video/${v}`
+    }
     return null
   }
 
@@ -161,13 +179,24 @@ function VideoItem({ url, embedUrl, aspectRatio, animation, delay }) {
 
   const mediaContent = embedSrc ? (
     /* ── Embed player (YouTube/Vimeo) ── */
-    <div style={{ position: 'relative', width: '100%', height: '100%', backgroundColor: '#000' }}>
+    <div
+      style={{ position: 'relative', width: '100%', height: '100%', backgroundColor: '#000' }}
+      onMouseLeave={() => setIframeActive(false)}
+    >
       <iframe
         src={embedSrc}
         style={{ width: '100%', height: '100%', border: 'none', display: 'block' }}
         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
         allowFullScreen
       />
+      {/* Transparent overlay — blocks iframe from swallowing scroll events.
+          Removed on click so YouTube controls still work; restored on mouse-leave. */}
+      {!iframeActive && (
+        <div
+          onClick={() => setIframeActive(true)}
+          style={{ position: 'absolute', inset: 0, cursor: 'pointer', zIndex: 1 }}
+        />
+      )}
     </div>
   ) : (
     /* ── Cloudinary direct video ── */
@@ -214,9 +243,8 @@ function VideoItem({ url, embedUrl, aspectRatio, animation, delay }) {
   )
 
   return (
-    <div style={{ width: '100%', aspectRatio: ratio, borderRadius: '16px', overflow: 'hidden', backgroundColor: '#111' }}>
+    <div style={{ width: '100%', ...(ratio !== 'auto' && { aspectRatio: ratio }), borderRadius: '16px', overflow: 'hidden', backgroundColor: '#111' }}>
       {embedSrc ? (
-        /* Embeds don't need cinematic/parallax — they're iframes */
         mediaContent
       ) : animation === 'cinematic' ? (
         <CinematicReveal delay={delay}>{mediaContent}</CinematicReveal>
@@ -225,6 +253,19 @@ function VideoItem({ url, embedUrl, aspectRatio, animation, delay }) {
       )}
     </div>
   )
+}
+
+/* ── Detect portrait aspect ratio ── */
+function isPortrait(ar) {
+  const portraits = new Set(['9:16', '2:3', '3:4', '4:5', '9/16', '2/3', '3/4', '4/5'])
+  return portraits.has(ar)
+}
+
+/* ── Auto-select column count: 3 if majority are portrait, else 2 ── */
+function getGalleryCols(images) {
+  if (!images?.length) return 2
+  const portraitCount = images.filter(img => isPortrait(typeof img === 'object' ? img?.aspect_ratio : null)).length
+  return portraitCount > images.length / 2 ? 3 : 2
 }
 
 /* ── Image item ── */
@@ -240,12 +281,293 @@ function ImageItem({ url, aspectRatio, animation, delay, index }) {
   )
 
   return (
-    <div style={{ width: '100%', aspectRatio: ratio, borderRadius: '16px', overflow: 'hidden', backgroundColor: '#ddd' }}>
+    <div style={{ width: '100%', ...(ratio !== 'auto' && { aspectRatio: ratio }), borderRadius: '16px', overflow: 'hidden', backgroundColor: '#ddd' }}>
       {animation === 'cinematic' ? (
         <CinematicReveal delay={delay}>{mediaContent}</CinematicReveal>
       ) : (
         <ParallaxMedia speed={0.04 + index * 0.01}>{mediaContent}</ParallaxMedia>
       )}
+    </div>
+  )
+}
+
+/* ── Stack Gallery — adaptive layout based on aspect ratio ── */
+function StackGallery({ images, animation }) {
+  const cols = getGalleryCols(images)
+
+  // Portrait (3-col): uniform 3-per-row grid
+  if (cols === 3) {
+    const rows = []
+    for (let i = 0; i < images.length; i += 3) rows.push(images.slice(i, i + 3))
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        {rows.map((row, r) => (
+          <div key={r} style={{ display: 'grid', gridTemplateColumns: `repeat(${row.length}, 1fr)`, gap: '16px' }}>
+            {row.map((img, j) => {
+              const url = typeof img === 'string' ? img : img?.url
+              const ar = typeof img === 'object' ? img?.aspect_ratio : '9:16'
+              if (!url) return null
+              return (
+                <motion.div key={j}
+                  initial={{ opacity: 0, y: 60 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, amount: 0.08 }}
+                  transition={{ ...spring, delay: 0.08 * j }}
+                >
+                  <ImageItem url={url} aspectRatio={ar} animation={animation} delay={0.06 * j} index={r * 3 + j} />
+                </motion.div>
+              )
+            })}
+          </div>
+        ))}
+      </div>
+    )
+  }
+
+  // Landscape (2-col): span-driven rows — full-width items solo, half-width items pair up
+  function norm(img) {
+    if (!img) return { url: '', aspect_ratio: '16:9', span: 1 }
+    if (typeof img === 'string') return { url: img, aspect_ratio: '16:9', span: 1 }
+    return { url: img.url || '', aspect_ratio: img.aspect_ratio || '16:9', span: img.span ?? 1 }
+  }
+  const rows = []
+  let i = 0
+  while (i < images.length) {
+    const img = norm(images[i])
+    if (img.span === 2) {
+      rows.push([images[i]])
+      i++
+    } else {
+      const next = images[i + 1] ? norm(images[i + 1]) : null
+      if (next && next.span !== 2) {
+        rows.push([images[i], images[i + 1]])
+        i += 2
+      } else {
+        rows.push([images[i]])
+        i++
+      }
+    }
+  }
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+      {rows.map((row, r) => (
+        <div key={r} style={{ display: 'grid', gridTemplateColumns: `repeat(${row.length}, 1fr)`, gap: '16px' }}>
+          {row.map((img, j) => {
+            const url = typeof img === 'string' ? img : img?.url
+            const ar = typeof img === 'object' ? img?.aspect_ratio : (row.length === 1 ? '16:9' : '4:5')
+            if (!url) return null
+            return (
+              <motion.div key={j}
+                initial={{ opacity: 0, y: 60 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, amount: 0.08 }}
+                transition={{ ...spring, delay: 0.08 * j }}
+              >
+                <ImageItem url={url} aspectRatio={ar} animation={animation} delay={0.06 * j} index={images.indexOf(img)} />
+              </motion.div>
+            )
+          })}
+        </div>
+      ))}
+    </div>
+  )
+}
+
+/* ── Infinite Gallery Strip — auto-scrolling horizontal strip ── */
+function InfiniteGalleryStrip({ images }) {
+  const trackRef = useRef()
+  const animRef = useRef()
+  const posRef = useRef(0)
+  const pausedRef = useRef(false)
+
+  useEffect(() => {
+    function tick() {
+      if (!pausedRef.current && trackRef.current) {
+        posRef.current -= 0.6
+        const half = trackRef.current.scrollWidth / 2
+        if (Math.abs(posRef.current) >= half) posRef.current = 0
+        trackRef.current.style.transform = `translateX(${posRef.current}px)`
+      }
+      animRef.current = requestAnimationFrame(tick)
+    }
+    animRef.current = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(animRef.current)
+  }, [])
+
+  const doubled = [...images, ...images]
+
+  return (
+    <div
+      style={{ overflow: 'hidden', width: '100%', cursor: 'grab' }}
+      onMouseEnter={() => { pausedRef.current = true }}
+      onMouseLeave={() => { pausedRef.current = false }}
+    >
+      <div ref={trackRef} style={{ display: 'flex', gap: '16px', width: 'max-content' }}>
+        {doubled.map((img, i) => {
+          const url = typeof img === 'string' ? img : img?.url
+          if (!url) return null
+          return (
+            <div key={i} style={{ flexShrink: 0, height: '420px', width: '560px', borderRadius: '12px', overflow: 'hidden', backgroundColor: '#ddd' }}>
+              <img src={url} alt={`Shot ${i + 1}`}
+                style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', filter: 'saturate(1.3)', pointerEvents: 'none' }} />
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+/* ── BTS Video Strip — dark full-width card at end of project ── */
+function BTSStrip({ videoUrl, title }) {
+  const [playing, setPlaying] = useState(false)
+  const videoRef = useRef()
+  const stripRef = useRef()
+  const [visible, setVisible] = useState(false)
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting) setVisible(true) },
+      { threshold: 0.2 }
+    )
+    if (stripRef.current) observer.observe(stripRef.current)
+    return () => observer.disconnect()
+  }, [])
+
+  function toggle() {
+    if (!videoRef.current) return
+    if (videoRef.current.paused) {
+      videoRef.current.play().catch(() => {}) // catch browser autoplay rejection silently
+    } else {
+      videoRef.current.pause()
+    }
+  }
+
+  return (
+    <div ref={stripRef} style={{
+      width: '100%', backgroundColor: '#0a0a0a',
+      padding: 'clamp(40px,6vw,80px) clamp(16px,5vw,40px)',
+      margin: '0 0 0',
+    }}>
+      <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
+        {/* Label */}
+        <div style={{
+          opacity: visible ? 1 : 0, transform: visible ? 'translateY(0)' : 'translateY(20px)',
+          transition: 'opacity 0.7s ease, transform 0.7s ease',
+          marginBottom: '32px', display: 'flex', alignItems: 'center', gap: '16px',
+        }}>
+          <span style={{
+            fontFamily: '"Geist Mono",monospace', fontSize: '11px', fontWeight: 700,
+            color: '#ff4d00', letterSpacing: '0.25em', textTransform: 'uppercase',
+            border: '1px solid #ff4d00', padding: '4px 12px', borderRadius: '40px',
+          }}>BTS</span>
+          <span style={{ fontFamily: '"Geist",sans-serif', fontSize: '13px', color: '#555', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+            Behind The Scenes
+          </span>
+        </div>
+
+        {/* 2-col layout */}
+        <div className="bts-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'clamp(24px,4vw,60px)', alignItems: 'center' }}>
+
+          {/* Left — video player */}
+          <div style={{
+            opacity: visible ? 1 : 0, transform: visible ? 'translateX(0)' : 'translateX(-40px)',
+            transition: 'opacity 0.8s ease 0.15s, transform 0.8s ease 0.15s',
+          }}>
+            <div
+              onClick={toggle}
+              style={{ position: 'relative', width: '100%', aspectRatio: '16/9', borderRadius: '12px', overflow: 'hidden', backgroundColor: '#111', cursor: 'pointer' }}
+            >
+              <video
+                ref={videoRef}
+                src={videoUrl}
+                loop
+                playsInline
+                preload="none"
+                onPlay={() => setPlaying(true)}
+                onPause={() => setPlaying(false)}
+                onEnded={() => setPlaying(false)}
+                style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+              />
+              {/* Play / Pause overlay */}
+              <div style={{
+                position: 'absolute', inset: 0,
+                background: playing ? 'rgba(0,0,0,0)' : 'rgba(0,0,0,0.45)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                opacity: playing ? 0 : 1, transition: 'opacity 0.4s ease',
+              }}>
+                <div style={{
+                  width: '72px', height: '72px', borderRadius: '50%',
+                  backgroundColor: 'rgba(255,77,0,0.15)',
+                  border: '2px solid #ff4d00',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  transition: 'transform 0.3s ease',
+                }}>
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="#ff4d00">
+                    <polygon points="6,3 20,12 6,21" />
+                  </svg>
+                </div>
+              </div>
+              {/* Playing indicator */}
+              {playing && (
+                <div
+                  onClick={toggle}
+                  style={{
+                    position: 'absolute', bottom: '16px', right: '16px',
+                    fontFamily: '"Geist Mono",monospace', fontSize: '11px', fontWeight: 700,
+                    color: '#fff', letterSpacing: '0.15em',
+                    background: 'rgba(0,0,0,0.6)', padding: '4px 12px', borderRadius: '20px',
+                    cursor: 'pointer',
+                  }}>
+                  ■ STOP
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Right — text */}
+          <div style={{
+            opacity: visible ? 1 : 0, transform: visible ? 'translateX(0)' : 'translateX(40px)',
+            transition: 'opacity 0.8s ease 0.3s, transform 0.8s ease 0.3s',
+          }}>
+            <h2 style={{
+              fontFamily: '"Geist",sans-serif',
+              fontSize: 'clamp(28px,3.5vw,48px)',
+              fontWeight: 700, letterSpacing: '-0.03em', lineHeight: 1.1,
+              color: '#fff', margin: '0 0 20px',
+            }}>
+              {title}
+            </h2>
+            <p style={{
+              fontFamily: '"Geist",sans-serif', fontSize: 'clamp(14px,1.2vw,16px)',
+              fontWeight: 400, color: '#666', lineHeight: 1.75, margin: '0 0 32px',
+              maxWidth: '440px',
+            }}>
+              A raw look at what it takes to craft this project — the light chasing, the setups, and the moments between shots.
+            </p>
+            <button
+              onClick={toggle}
+              style={{
+                fontFamily: '"Geist",sans-serif', fontSize: '14px', fontWeight: 600,
+                color: playing ? '#666' : '#000',
+                backgroundColor: playing ? 'transparent' : '#ff4d00',
+                border: playing ? '1px solid #333' : 'none',
+                padding: '12px 28px', borderRadius: '40px',
+                cursor: 'pointer', letterSpacing: '0.04em',
+                transition: 'all 0.3s ease',
+              }}
+            >
+              {playing ? 'Pause BTS' : '▶  Watch BTS'}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <style>{`
+        @media (max-width: 809px) {
+          .bts-grid { grid-template-columns: 1fr !important; }
+        }
+      `}</style>
     </div>
   )
 }
@@ -273,6 +595,8 @@ export default function ProjectDetailPage() {
         if (found) setProject(found)
         else navigate('/portfolio', { replace: true })
       }
+      // Tell Lenis to recalculate scroll height after async content loads
+      setTimeout(() => window.dispatchEvent(new Event('resize')), 150)
       const { data: settings } = await supabase
         .from('site_settings')
         .select('key, value')
@@ -298,6 +622,7 @@ export default function ProjectDetailPage() {
   const gallery = (project.gallery_images || [])
   const videos = (project.gallery_videos || [])
   const animation = project.gallery_animation || 'parallax'
+  const isFullBleed = project.image_display_style === 'circular' || project.image_display_style === 'infinite'
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#f5f5f5' }}>
@@ -451,15 +776,15 @@ export default function ProjectDetailPage() {
 
       {/* ── Gallery Images ── */}
       {gallery.length > 0 && (
-        <div style={{ maxWidth: project.image_display_style === 'circular' ? '100%' : '1400px', margin: '0 auto', padding: project.image_display_style === 'circular' ? '0 0 80px' : '0 clamp(16px, 5vw, 40px) 80px' }}>
+        <div style={{ maxWidth: isFullBleed ? '100%' : '1400px', margin: '0 auto', padding: isFullBleed ? '0 0 80px' : '0 clamp(16px, 5vw, 40px) 80px' }}>
           <motion.h3
             initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }} transition={spring}
-            style={{ fontFamily: '"Geist",sans-serif', fontSize: '13px', fontWeight: 500, color: '#aaa', margin: '0 0 24px', textTransform: 'uppercase', letterSpacing: '0.1em', padding: project.image_display_style === 'circular' ? '0 clamp(16px, 5vw, 40px)' : '0' }}
+            style={{ fontFamily: '"Geist",sans-serif', fontSize: '13px', fontWeight: 500, color: '#aaa', margin: '0 0 24px', textTransform: 'uppercase', letterSpacing: '0.1em', padding: isFullBleed ? '0 clamp(16px, 5vw, 40px)' : '0' }}
           >Project Gallery</motion.h3>
 
           {project.image_display_style === 'circular' ? (
-            /* ── Circular Gallery mode ── */
+            /* ── Circular Gallery ── */
             <motion.div
               initial={{ opacity: 0 }}
               whileInView={{ opacity: 1 }}
@@ -481,34 +806,51 @@ export default function ProjectDetailPage() {
                 scrollEase={0.05}
               />
             </motion.div>
+
+          ) : project.image_display_style === 'stack' ? (
+            /* ── Stack: alternating full-width and 2-col rows ── */
+            <StackGallery images={gallery} animation={animation} />
+
+          ) : project.image_display_style === 'infinite' ? (
+            /* ── Infinite: auto-scrolling horizontal strip ── */
+            <InfiniteGalleryStrip images={gallery} />
+
           ) : (
-            /* ── Grid mode (parallax or cinematic) ── */
-            <div className="gallery-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '20px' }}>
-              {gallery.map((img, i) => {
-                const url = typeof img === 'string' ? img : img?.url
-                const ar = typeof img === 'object' ? img?.aspect_ratio : '16:9'
-                if (!url) return null
-                return (
-                  <motion.div key={i}
-                    initial={{ opacity: 0, y: 60 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true, amount: 0.1 }}
-                    transition={{ ...spring, delay: 0.06 * i }}
-                    style={{ gridColumn: i === 0 ? 'span 2' : 'span 1' }}
-                  >
-                    <ImageItem
-                      url={url}
-                      aspectRatio={ar}
-                      animation={animation}
-                      delay={0.08 * i}
-                      index={i}
-                    />
-                  </motion.div>
-                )
-              })}
-            </div>
+            /* ── Parallax Grid (default) ── */
+            (() => {
+              const cols = getGalleryCols(gallery)
+              // Portrait (3-col): uniform grid, no full-width hero
+              // Landscape (2-col): first image full-width, rest half-width
+              return (
+                <div className="gallery-grid" style={{ display: 'grid', gridTemplateColumns: `repeat(${cols}, 1fr)`, gap: '20px' }}>
+                  {gallery.map((img, i) => {
+                    const url = typeof img === 'string' ? img : img?.url
+                    const ar = typeof img === 'object' ? img?.aspect_ratio : '16:9'
+                    if (!url) return null
+                    const imgObj = typeof img === 'object' ? img : { url: img, aspect_ratio: '16:9', span: 1 }
+                    const spanFull = imgObj.span === 2 && cols === 2
+                    return (
+                      <motion.div key={i}
+                        initial={{ opacity: 0, y: 60 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true, amount: 0.1 }}
+                        transition={{ ...spring, delay: 0.06 * i }}
+                        style={{ gridColumn: spanFull ? 'span 2' : 'span 1' }}
+                      >
+                        <ImageItem url={url} aspectRatio={ar} animation={animation} delay={0.08 * i} index={i} />
+                      </motion.div>
+                    )
+                  })}
+                </div>
+              )
+            })()
           )}
         </div>
+      )}
+
+      {/* ── BTS Video Strip ── */}
+      {project.video_url && (
+        <BTSStrip videoUrl={project.video_url} title={project.title} />
       )}
 
       {/* ── Next / Prev ── */}

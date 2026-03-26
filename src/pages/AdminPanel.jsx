@@ -65,6 +65,25 @@ async function uploadToCloudinary(file, onProgress) {
   })
 }
 
+/* ── Gallery image normalizer — handles legacy string format + missing span ── */
+function normalizeGalleryImage(img) {
+  if (!img) return { url: '', aspect_ratio: '16:9', span: 1 }
+  if (typeof img === 'string') return { url: img, aspect_ratio: '16:9', span: 1 }
+  return { url: img.url || '', aspect_ratio: img.aspect_ratio || '16:9', span: img.span ?? 1 }
+}
+
+/* ── Column count: 3 if majority portrait, else 2 ── */
+const PORTRAIT_RATIOS_ADMIN = new Set(['4:5', '3:4', '2:3', '9:16'])
+function getGalleryCols(imgs) {
+  const valid = imgs.filter(img => img?.url || typeof img === 'string')
+  if (valid.length === 0) return 2
+  const portraitCount = valid.filter(img => {
+    const ar = typeof img === 'object' ? img.aspect_ratio : '16:9'
+    return PORTRAIT_RATIOS_ADMIN.has(ar)
+  }).length
+  return portraitCount > valid.length / 2 ? 3 : 2
+}
+
 /* ── Image Uploader (Supabase) ── */
 function ImageUploader({ value, onUpload, folder, label, height = '160px' }) {
   const [uploading, setUploading] = useState(false)
@@ -272,9 +291,156 @@ async function directSaveField(key, field, val, setSettings, showToast) {
   }
 }
 
+/* ── Layout Canvas — inline blueprint for reordering gallery images and toggling span ── */
+function LayoutCanvas({ images, displayStyle, onSave }) {
+  const imgs = (images || []).map(normalizeGalleryImage)
+  const cols = getGalleryCols(imgs)
+  const wrapperRef = useRef()
+  const gridRef = useRef()
+  const dragIndex = useRef(null)
+  const [dropTarget, setDropTarget] = useState(null)
+
+  // Initial scale + height on mount and when imgs change
+  useEffect(() => {
+    if (!wrapperRef.current || !gridRef.current) return
+    const w = wrapperRef.current.offsetWidth
+    const s = w / 1400
+    gridRef.current.style.transform = `scale(${s})`
+    gridRef.current.style.transformOrigin = 'top left'
+    wrapperRef.current.style.height = `${gridRef.current.scrollHeight * s}px`
+  }, [imgs.length])
+
+  // Recalculate on container resize
+  useEffect(() => {
+    const obs = new ResizeObserver(([entry]) => {
+      const w = entry.contentRect.width
+      const s = w / 1400
+      if (gridRef.current) {
+        gridRef.current.style.transform = `scale(${s})`
+        gridRef.current.style.transformOrigin = 'top left'
+      }
+      if (wrapperRef.current && gridRef.current) {
+        wrapperRef.current.style.height = `${gridRef.current.scrollHeight * s}px`
+      }
+    })
+    if (wrapperRef.current) obs.observe(wrapperRef.current)
+    return () => obs.disconnect()
+  }, [])
+
+  function toggleSpan(index) {
+    const updated = imgs.map((img, j) =>
+      j === index ? { ...img, span: img.span === 2 ? 1 : 2 } : img
+    )
+    onSave(updated)
+  }
+
+  function getRatio(ar) {
+    const map = {
+      '16:9': '16/9', '4:3': '4/3', '3:2': '3/2', '1:1': '1/1',
+      '4:5': '4/5', '3:4': '3/4', '2:3': '2/3', '9:16': '9/16', '21:9': '21/9'
+    }
+    return map[ar] || '16/9'
+  }
+
+  return (
+    <div style={{ marginTop: '16px' }}>
+      <p style={{ fontFamily: '"Geist",sans-serif', fontSize: '10px', color: accent, margin: '0 0 8px', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 600 }}>
+        🗂 Layout Editor — drag to reorder {cols === 3 ? '(3-col portrait)' : '(2-col landscape)'}
+      </p>
+      <div ref={wrapperRef} style={{ width: '100%', overflow: 'hidden', position: 'relative', borderRadius: '8px', border: `1px solid ${border}` }}>
+        <div
+          ref={gridRef}
+          style={{
+            width: '1400px',
+            display: 'grid',
+            gridTemplateColumns: `repeat(${cols}, 1fr)`,
+            gap: '16px',
+            padding: '16px',
+            backgroundColor: '#0a0a0a',
+          }}
+        >
+          {imgs.map((img, idx) => {
+            const effectiveSpan = (img.span === 2 && cols === 2) ? 2 : 1
+            const isDropTarget = dropTarget === idx
+            return (
+              <div
+                key={idx}
+                draggable
+                onDragStart={() => { dragIndex.current = idx }}
+                onDragOver={(e) => { e.preventDefault(); setDropTarget(idx) }}
+                onDragLeave={() => setDropTarget(null)}
+                onDrop={() => {
+                  if (dragIndex.current === null || dragIndex.current === idx) {
+                    setDropTarget(null)
+                    return
+                  }
+                  const updated = [...imgs]
+                  const [moved] = updated.splice(dragIndex.current, 1)
+                  updated.splice(idx, 0, moved)
+                  setDropTarget(null)
+                  onSave(updated)
+                }}
+                onDragEnd={() => { dragIndex.current = null; setDropTarget(null) }}
+                style={{
+                  gridColumn: `span ${effectiveSpan}`,
+                  borderRadius: '8px',
+                  overflow: 'hidden',
+                  border: isDropTarget ? `2px solid ${accent}` : `2px solid ${border}`,
+                  cursor: 'grab',
+                  backgroundColor: '#111',
+                  position: 'relative',
+                  aspectRatio: getRatio(img.aspect_ratio),
+                }}
+              >
+                {/* Drag handle + span toggle */}
+                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px', background: 'linear-gradient(to bottom, rgba(0,0,0,0.7), transparent)', zIndex: 2 }}>
+                  <span style={{ fontSize: '18px', lineHeight: 1, color: '#888' }}>⠿</span>
+                  {cols === 2 && (
+                    <button
+                      onClick={(e) => { e.stopPropagation(); toggleSpan(idx) }}
+                      style={{
+                        fontFamily: '"Geist",sans-serif', fontSize: '10px', fontWeight: 600,
+                        color: img.span === 2 ? accent : '#888',
+                        background: 'rgba(0,0,0,0.6)', border: `1px solid ${img.span === 2 ? accent : '#444'}`,
+                        borderRadius: '4px', padding: '3px 7px', cursor: 'pointer', lineHeight: 1.4
+                      }}
+                    >
+                      {img.span === 2 ? 'Full ▸' : 'Half ▸'}
+                    </button>
+                  )}
+                </div>
+                {/* Thumbnail */}
+                {img.url ? (
+                  <img
+                    src={img.url}
+                    alt=""
+                    style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                    draggable={false}
+                  />
+                ) : (
+                  <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#444', fontSize: '28px' }}>📷</div>
+                )}
+                {/* Aspect ratio badge */}
+                <div style={{ position: 'absolute', bottom: '8px', right: '8px', fontFamily: '"Geist Mono",monospace', fontSize: '10px', color: '#888', background: 'rgba(0,0,0,0.6)', padding: '2px 6px', borderRadius: '3px' }}>
+                  {img.aspect_ratio}
+                </div>
+                {/* Index badge */}
+                <div style={{ position: 'absolute', bottom: '8px', left: '8px', fontFamily: '"Geist Mono",monospace', fontSize: '10px', color: '#555', background: 'rgba(0,0,0,0.6)', padding: '2px 6px', borderRadius: '3px' }}>
+                  #{idx + 1}
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function AdminPanel() {
   const [authed, setAuthed] = useState(false)
   const [pw, setPw] = useState('')
+  const [loginLoading, setLoginLoading] = useState(false)
   const [saving, setSaving] = useState(false)
   const [toast, setToast] = useState('')
   const [settings, setSettings] = useState({})
@@ -287,8 +453,14 @@ export default function AdminPanel() {
   const [messages, setMessages] = useState([])
   const [newTool, setNewTool] = useState('')
 
-  const ADMIN_PW = 'shravan2025'
   const showToast = (msg, type = 'success') => { setToast({ msg, type }); setTimeout(() => setToast(''), type === 'error' ? 6000 : 3500) }
+
+  // Restore session on page load
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) setAuthed(true)
+    })
+  }, [])
 
   useEffect(() => { if (authed) loadAll() }, [authed])
 
@@ -313,10 +485,30 @@ export default function AdminPanel() {
     if (m.data) setMessages(m.data)
   }
 
+  const handleLogin = async () => {
+    if (!pw) return
+    setLoginLoading(true)
+    const adminEmail = import.meta.env.VITE_ADMIN_EMAIL
+    if (!adminEmail) {
+      showToast('VITE_ADMIN_EMAIL not set in .env', 'error')
+      setLoginLoading(false)
+      return
+    }
+    const { error } = await supabase.auth.signInWithPassword({ email: adminEmail, password: pw })
+    if (error) showToast('Wrong password. Please try again.', 'error')
+    else setAuthed(true)
+    setLoginLoading(false)
+  }
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut()
+    setAuthed(false)
+  }
+
   const saveSetting = async (key, value) => {
     setSaving(true)
     const { error } = await supabase.from('site_settings').update({ value }).eq('key', key)
-    if (error) showToast(`Save failed: ${error.message}`, 'error')
+    if (error) showToast('Save failed. Please try again.', 'error')
     else showToast(`${key} saved successfully!`, 'success')
     setSaving(false)
   }
@@ -336,10 +528,10 @@ export default function AdminPanel() {
     const { id, created_at, ...rest } = row
     if (id) {
       const { error } = await supabase.from(table).update(rest).eq('id', id)
-      if (error) { showToast(`Update failed: ${error.message}`, 'error'); setSaving(false); return }
+      if (error) { showToast('Update failed. Please try again.', 'error'); setSaving(false); return }
     } else {
       const { error } = await supabase.from(table).insert([rest])
-      if (error) { showToast(`Create failed: ${error.message}`, 'error'); setSaving(false); return }
+      if (error) { showToast('Create failed. Please try again.', 'error'); setSaving(false); return }
     }
     showToast(`${table} item saved!`, 'success')
     await loadAll()
@@ -364,9 +556,11 @@ export default function AdminPanel() {
           </h1>
           <p style={{ fontFamily: '"Geist",sans-serif', fontSize: '14px', color: gray, textAlign: 'center', margin: '0 0 24px' }}>Enter password to continue</p>
           <Input value={pw} onChange={setPw} placeholder="Password" type="password"
-            onKeyDown={e => e.key === 'Enter' && (pw === ADMIN_PW ? setAuthed(true) : showToast('Wrong password. Please try again.', 'error'))} />
+            onKeyDown={async e => { if (e.key === 'Enter') await handleLogin() }} />
           <div style={{ marginTop: '16px' }}>
-            <Btn onClick={() => pw === ADMIN_PW ? setAuthed(true) : showToast('Wrong password. Please try again.', 'error')} fullWidth>Enter Dashboard</Btn>
+            <Btn onClick={handleLogin} fullWidth disabled={loginLoading}>
+              {loginLoading ? 'Signing in...' : 'Enter Dashboard'}
+            </Btn>
           </div>
         </div>
       </div>
@@ -406,7 +600,7 @@ export default function AdminPanel() {
         </h1>
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
           <a href="/" target="_blank" style={{ fontFamily: '"Geist",sans-serif', fontSize: '13px', color: gray, textDecoration: 'none' }}>View Site →</a>
-          <Btn onClick={() => setAuthed(false)} variant="ghost" small>Logout</Btn>
+          <Btn onClick={handleLogout} variant="ghost" small>Logout</Btn>
         </div>
       </div>
 
@@ -577,6 +771,45 @@ export default function AdminPanel() {
                 </a>
               </div>
             )}
+          </div>
+
+          {/* ── Hero Visibility Toggles ── */}
+          <div style={{ marginTop: '20px', display: 'flex', flexWrap: 'wrap', gap: '16px' }}>
+            {[
+              { key: 'show_tagline', label: 'Tagline Line', note: '"Award-winning creative" above headline' },
+              { key: 'show_bottom_bar', label: 'Bottom Tab Bar', note: 'social links + subtext + award strip' },
+              { key: 'show_award', label: 'Award Panel', note: 'trophy + award name in bottom right' },
+            ].map(({ key, label, note }) => {
+              const on = settings.hero?.value?.[key] !== false
+              return (
+                <label key={key} style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', flex: '1 1 200px' }}>
+                  <div
+                    onClick={async () => {
+                      const next = !on
+                      updateSetting('hero', key, next)
+                      await directSaveField('hero', key, next, setSettings, showToast)
+                    }}
+                    style={{
+                      width: '36px', height: '20px', borderRadius: '10px',
+                      backgroundColor: on ? accent : '#333',
+                      position: 'relative', cursor: 'pointer', transition: 'background-color 0.2s',
+                      flexShrink: 0,
+                    }}
+                  >
+                    <div style={{
+                      position: 'absolute', top: '3px',
+                      left: on ? '19px' : '3px',
+                      width: '14px', height: '14px', borderRadius: '50%',
+                      backgroundColor: '#fff', transition: 'left 0.2s',
+                    }} />
+                  </div>
+                  <div>
+                    <p style={{ fontFamily: '"Geist",sans-serif', fontSize: '13px', color: on ? accent : '#888', margin: 0, fontWeight: 500 }}>{label}</p>
+                    <p style={{ fontFamily: '"Geist",sans-serif', fontSize: '11px', color: gray, margin: 0 }}>{note}</p>
+                  </div>
+                </label>
+              )
+            })}
           </div>
 
           <div style={{ marginTop: '16px' }}>
@@ -808,6 +1041,24 @@ export default function AdminPanel() {
                   <p style={{ fontFamily: '"Geist",sans-serif', fontSize: '11px', color: gray, margin: '0 0 6px', textTransform: 'uppercase' }}>Cover Image</p>
                   <ImageUploader value={p.cover_image} folder="portfolio" label="Cover" height="140px"
                     onUpload={url => { const u = [...projects]; u[i] = { ...u[i], cover_image: url }; setProjects(u); saveRow('projects', u[i]) }} />
+                  <div style={{ marginTop: '8px' }}>
+                    <p style={{ fontFamily: '"Geist",sans-serif', fontSize: '10px', color: gray, margin: '0 0 4px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Cover Aspect Ratio</p>
+                    <select
+                      value={p.cover_aspect_ratio || 'auto'}
+                      onChange={e => { const u = [...projects]; u[i] = { ...u[i], cover_aspect_ratio: e.target.value }; setProjects(u) }}
+                      style={{ width: '100%', fontFamily: '"Geist",sans-serif', fontSize: '12px', color: white, backgroundColor: '#0d0d0d', border: `1px solid ${border}`, borderRadius: '6px', padding: '8px', outline: 'none' }}
+                      onFocus={e => e.target.style.borderColor = accent}
+                      onBlur={e => e.target.style.borderColor = border}
+                    >
+                      <option value="auto">Auto (natural height)</option>
+                      <option value="4/5">4:5 — Portrait</option>
+                      <option value="3/4">3:4 — Portrait tall</option>
+                      <option value="2/3">2:3 — Classic portrait</option>
+                      <option value="1/1">1:1 — Square</option>
+                      <option value="3/2">3:2 — Landscape</option>
+                      <option value="16/9">16:9 — Widescreen</option>
+                    </select>
+                  </div>
                 </div>
                 <div>
                   <p style={{ fontFamily: '"Geist",sans-serif', fontSize: '11px', color: '#a855f7', margin: '0 0 6px', textTransform: 'uppercase' }}>🎬 Project Video</p>
@@ -853,66 +1104,90 @@ export default function AdminPanel() {
                 <p style={{ fontFamily: '"Geist",sans-serif', fontSize: '11px', color: '#a855f7', margin: '0 0 10px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>🎬 Gallery Videos</p>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                   {(p.gallery_videos || []).map((vid, vi) => (
-                    <div key={vi} style={{ backgroundColor: '#0a0a0a', borderRadius: '10px', padding: '10px', border: `1px solid ${border}` }}>
-                      <VideoUploader
-                        value={vid.url}
-                        label={`Video ${vi + 1}`}
-                        height="120px"
-                        onUpload={url => {
-                          const u = [...projects]
-                          const vids = [...(u[i].gallery_videos || [])]
-                          vids[vi] = { ...vids[vi], url }
-                          u[i] = { ...u[i], gallery_videos: vids }
-                          setProjects(u)
-                          saveRow('projects', u[i])
-                        }}
-                      />
-                      {/* YouTube / Vimeo URL */}
-                        <div style={{ marginTop: '8px' }}>
-                          <p style={{ fontFamily: '"Geist",sans-serif', fontSize: '10px', color: gray, margin: '0 0 4px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>— OR — YouTube / Vimeo URL</p>
-                          <input
-                            value={vid.embed_url || ''}
-                            placeholder="https://youtu.be/... or https://vimeo.com/..."
+                    <div key={vi} style={{ backgroundColor: '#0a0a0a', borderRadius: '10px', padding: '12px', border: `1px solid ${border}` }}>
+                      <p style={{ fontFamily: '"Geist",sans-serif', fontSize: '11px', color: '#a855f7', margin: '0 0 8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>🎬 Video {vi + 1}</p>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                        {/* Left col — upload + URL */}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                          <VideoUploader
+                            value={vid.url}
+                            label="Upload video"
+                            height="110px"
+                            onUpload={url => {
+                              const u = [...projects]
+                              const vids = [...(u[i].gallery_videos || [])]
+                              vids[vi] = { ...vids[vi], url }
+                              u[i] = { ...u[i], gallery_videos: vids }
+                              setProjects(u)
+                              saveRow('projects', u[i])
+                            }}
+                          />
+                          <div>
+                            <p style={{ fontFamily: '"Geist",sans-serif', fontSize: '10px', color: gray, margin: '0 0 4px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>— OR — YouTube / Vimeo URL</p>
+                            <input
+                              value={vid.embed_url || ''}
+                              placeholder="https://youtu.be/..."
+                              onChange={e => {
+                                const u = [...projects]
+                                const vids = [...(u[i].gallery_videos || [])]
+                                vids[vi] = { ...vids[vi], embed_url: e.target.value }
+                                u[i] = { ...u[i], gallery_videos: vids }
+                                setProjects(u)
+                              }}
+                              style={{ width: '100%', fontFamily: '"Geist",sans-serif', fontSize: '12px', color: white, backgroundColor: '#0d0d0d', border: `1px solid ${border}`, borderRadius: '6px', padding: '8px', outline: 'none', boxSizing: 'border-box' }}
+                              onFocus={e => e.target.style.borderColor = '#a855f7'}
+                              onBlur={e => e.target.style.borderColor = border}
+                            />
+                            {vid.embed_url && (
+                              <p style={{ fontFamily: '"Geist",sans-serif', fontSize: '10px', color: '#00c200', margin: '4px 0 0' }}>✓ Embed URL set</p>
+                            )}
+                          </div>
+                        </div>
+                        {/* Right col — aspect ratio */}
+                        <div style={{ backgroundColor: '#111', borderRadius: '8px', padding: '10px', border: `1px solid ${border}`, display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                          <p style={{ fontFamily: '"Geist",sans-serif', fontSize: '10px', color: accent, margin: 0, textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 600 }}>📐 Aspect Ratio</p>
+                          <select
+                            value={vid.aspect_ratio || '16:9'}
                             onChange={e => {
                               const u = [...projects]
                               const vids = [...(u[i].gallery_videos || [])]
-                              vids[vi] = { ...vids[vi], embed_url: e.target.value }
+                              vids[vi] = { ...vids[vi], aspect_ratio: e.target.value }
                               u[i] = { ...u[i], gallery_videos: vids }
                               setProjects(u)
                             }}
-                            style={{ width: '100%', fontFamily: '"Geist",sans-serif', fontSize: '12px', color: white, backgroundColor: '#0d0d0d', border: `1px solid ${border}`, borderRadius: '6px', padding: '8px', outline: 'none', boxSizing: 'border-box' }}
-                            onFocus={e => e.target.style.borderColor = '#a855f7'}
+                            style={{ width: '100%', fontFamily: '"Geist",sans-serif', fontSize: '12px', color: white, backgroundColor: '#0d0d0d', border: `1px solid ${border}`, borderRadius: '6px', padding: '8px', outline: 'none' }}
+                            onFocus={e => e.target.style.borderColor = accent}
                             onBlur={e => e.target.style.borderColor = border}
-                          />
-                          {vid.embed_url && (
-                            <p style={{ fontFamily: '"Geist",sans-serif', fontSize: '10px', color: '#00c200', margin: '4px 0 0' }}>✓ Embed URL set — this will be used on the site</p>
-                          )}
+                          >
+                            <option value="16:9">16:9 — Widescreen</option>
+                            <option value="4:3">4:3 — Classic</option>
+                            <option value="3:2">3:2 — Landscape</option>
+                            <option value="1:1">1:1 — Square</option>
+                            <option value="4:5">4:5 — Portrait</option>
+                            <option value="3:4">3:4 — Tall Portrait</option>
+                            <option value="2:3">2:3 — Classic Portrait</option>
+                            <option value="9:16">9:16 — Vertical</option>
+                            <option value="21:9">21:9 — Ultrawide</option>
+                          </select>
+                          {/* Visual ratio preview */}
+                          {(() => {
+                            const ratioMap = { '16:9':'16/9','4:3':'4/3','3:2':'3/2','1:1':'1/1','4:5':'4/5','3:4':'3/4','2:3':'2/3','9:16':'9/16','21:9':'21/9' }
+                            const css = ratioMap[vid.aspect_ratio || '16:9'] || '16/9'
+                            return (
+                              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '8px 0' }}>
+                                <div style={{ aspectRatio: css, height: css.split('/')[0] < css.split('/')[1] ? '48px' : '32px', maxWidth: '64px', backgroundColor: '#a855f722', border: '1px solid #a855f7', borderRadius: '4px' }} />
+                              </div>
+                            )
+                          })()}
                         </div>
-
-                        <select
-                          value={vid.aspect_ratio || '16:9'}
-                          onChange={e => {
-                            const u = [...projects]
-                            const vids = [...(u[i].gallery_videos || [])]
-                            vids[vi] = { ...vids[vi], aspect_ratio: e.target.value }
-                            u[i] = { ...u[i], gallery_videos: vids }
-                            setProjects(u)
-                          }}
-                          style={{ width: '100%', marginTop: '8px', fontFamily: '"Geist",sans-serif', fontSize: '12px', color: white, backgroundColor: '#0d0d0d', border: `1px solid ${border}`, borderRadius: '6px', padding: '8px', outline: 'none' }}
-                        >
-                        <option value="16:9">16:9 — Widescreen</option>
-                        <option value="4:3">4:3 — Classic</option>
-                        <option value="1:1">1:1 — Square</option>
-                        <option value="9:16">9:16 — Vertical</option>
-                        <option value="21:9">21:9 — Ultrawide</option>
-                      </select>
+                      </div>
                       <div style={{ marginTop: '8px' }}>
-                      <Btn onClick={async () => {
+                        <Btn onClick={async () => {
                           const u = [...projects]
                           u[i] = { ...u[i], gallery_videos: (u[i].gallery_videos || []).filter((_, idx) => idx !== vi) }
                           setProjects(u)
                           await saveRow('projects', u[i])
-                        }} variant="danger" small>Remove</Btn>
+                        }} variant="danger" small>Remove Video {vi + 1}</Btn>
                       </div>
                     </div>
                   ))}
@@ -927,12 +1202,21 @@ export default function AdminPanel() {
               {/* Gallery Images — up to 8 */}
               <div style={{ marginTop: '14px' }}>
                 <p style={{ fontFamily: '"Geist",sans-serif', fontSize: '11px', color: accent, margin: '0 0 10px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>📷 Gallery Images (max 8)</p>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: '10px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '10px' }}>
                   {(p.gallery_images || []).slice(0, 8).map((img, gi) => {
                     const imgUrl = typeof img === 'string' ? img : img?.url
                     const imgRatio = typeof img === 'object' ? img?.aspect_ratio : '16:9'
                     return (
                       <div key={gi} style={{ backgroundColor: '#0a0a0a', borderRadius: '10px', border: `1px solid ${border}`, overflow: 'hidden' }}>
+                        <div style={{ padding: '8px 8px 0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <p style={{ fontFamily: '"Geist",sans-serif', fontSize: '10px', color: accent, margin: 0, textTransform: 'uppercase', letterSpacing: '0.05em' }}>📷 Image {gi + 1}</p>
+                          <Btn onClick={async () => {
+                            const u = [...projects]
+                            u[i] = { ...u[i], gallery_images: (u[i].gallery_images || []).filter((_, idx) => idx !== gi) }
+                            setProjects(u)
+                            await saveRow('projects', u[i])
+                          }} variant="danger" small>×</Btn>
+                        </div>
                         <ImageUploader
                           value={imgUrl}
                           folder="portfolio"
@@ -941,38 +1225,37 @@ export default function AdminPanel() {
                           onUpload={url => {
                             const u = [...projects]
                             const imgs = [...(u[i].gallery_images || [])]
-                            imgs[gi] = { url, aspect_ratio: imgRatio || '16:9' }
+                            imgs[gi] = { ...normalizeGalleryImage(imgs[gi]), url, aspect_ratio: imgRatio || '16:9' }
                             u[i] = { ...u[i], gallery_images: imgs }
                             setProjects(u)
                             saveRow('projects', u[i])
                           }}
                         />
-                        <div style={{ padding: '6px' }}>
+                        <div style={{ padding: '8px', backgroundColor: '#111', borderTop: `1px solid ${border}` }}>
+                          <p style={{ fontFamily: '"Geist",sans-serif', fontSize: '10px', color: accent, margin: '0 0 4px', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 600 }}>📐 Aspect Ratio</p>
                           <select
                             value={imgRatio || '16:9'}
                             onChange={e => {
                               const u = [...projects]
                               const imgs = [...(u[i].gallery_images || [])]
-                              imgs[gi] = { url: imgUrl, aspect_ratio: e.target.value }
+                              imgs[gi] = { ...normalizeGalleryImage(imgs[gi]), aspect_ratio: e.target.value }
                               u[i] = { ...u[i], gallery_images: imgs }
                               setProjects(u)
                             }}
-                            style={{ width: '100%', fontFamily: '"Geist",sans-serif', fontSize: '10px', color: gray, backgroundColor: '#0d0d0d', border: `1px solid ${border}`, borderRadius: '4px', padding: '4px', outline: 'none' }}
+                            style={{ width: '100%', fontFamily: '"Geist",sans-serif', fontSize: '11px', color: white, backgroundColor: '#0d0d0d', border: `1px solid ${border}`, borderRadius: '4px', padding: '6px', outline: 'none' }}
+                            onFocus={e => e.target.style.borderColor = accent}
+                            onBlur={e => e.target.style.borderColor = border}
                           >
-                            <option value="16:9">16:9 Wide</option>
-                            <option value="4:3">4:3 Classic</option>
-                            <option value="1:1">1:1 Square</option>
-                            <option value="9:16">9:16 Vertical</option>
-                            <option value="21:9">21:9 Ultra</option>
+                            <option value="16:9">16:9 — Widescreen</option>
+                            <option value="4:3">4:3 — Classic</option>
+                            <option value="3:2">3:2 — Landscape</option>
+                            <option value="1:1">1:1 — Square</option>
+                            <option value="4:5">4:5 — Portrait</option>
+                            <option value="3:4">3:4 — Tall Portrait</option>
+                            <option value="2:3">2:3 — Classic Portrait</option>
+                            <option value="9:16">9:16 — Vertical</option>
+                            <option value="21:9">21:9 — Ultrawide</option>
                           </select>
-                          <div style={{ marginTop: '4px' }}>
-                          <Btn onClick={async () => {
-                              const u = [...projects]
-                              u[i] = { ...u[i], gallery_images: (u[i].gallery_images || []).filter((_, idx) => idx !== gi) }
-                              setProjects(u)
-                              await saveRow('projects', u[i])
-                            }} variant="danger" small>×</Btn>
-                          </div>
                         </div>
                       </div>
                     )
@@ -981,7 +1264,7 @@ export default function AdminPanel() {
                     <div
                       onClick={() => {
                         const u = [...projects]
-                        u[i] = { ...u[i], gallery_images: [...(u[i].gallery_images || []), { url: '', aspect_ratio: '16:9' }] }
+                        u[i] = { ...u[i], gallery_images: [...(u[i].gallery_images || []), { url: '', aspect_ratio: '16:9', span: 1 }] }
                         setProjects(u)
                       }}
                       style={{ height: '120px', borderRadius: '10px', border: `2px dashed ${border}`, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', gap: '4px', transition: 'border-color 0.2s' }}
@@ -995,10 +1278,53 @@ export default function AdminPanel() {
                 </div>
               </div>
 
-              {/* Single Save + Delete */}
-              <div style={{ display: 'flex', gap: '8px', marginTop: '14px' }}>
-                <Btn onClick={() => saveRow('projects', projects[i])} small disabled={saving}>Save</Btn>
-                <Btn onClick={() => deleteRow('projects', p.id)} variant="danger" small>Delete</Btn>
+              {/* Layout Editor Canvas */}
+              {['parallax', 'stack'].includes(p.image_display_style) &&
+               (p.gallery_images || []).filter(img => img?.url || typeof img === 'string').length >= 2 && (
+                <LayoutCanvas
+                  images={p.gallery_images}
+                  displayStyle={p.image_display_style}
+                  onSave={(newImages) => {
+                    const u = [...projects]
+                    u[i] = { ...u[i], gallery_images: newImages }
+                    setProjects(u)
+                    saveRow('projects', u[i])
+                  }}
+                />
+              )}
+
+              {/* Homepage Toggle + Save + Delete */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: '14px', flexWrap: 'wrap' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                  <div
+                    onClick={async () => {
+                      const u = [...projects]
+                      u[i] = { ...u[i], show_on_homepage: !u[i].show_on_homepage }
+                      setProjects(u)
+                      await saveRow('projects', u[i])
+                    }}
+                    style={{
+                      width: '36px', height: '20px', borderRadius: '10px',
+                      backgroundColor: p.show_on_homepage ? '#ff4d00' : '#333',
+                      position: 'relative', cursor: 'pointer', transition: 'background-color 0.2s',
+                      flexShrink: 0,
+                    }}
+                  >
+                    <div style={{
+                      position: 'absolute', top: '3px',
+                      left: p.show_on_homepage ? '19px' : '3px',
+                      width: '14px', height: '14px', borderRadius: '50%',
+                      backgroundColor: '#fff', transition: 'left 0.2s',
+                    }} />
+                  </div>
+                  <span style={{ fontFamily: '"Geist",sans-serif', fontSize: '12px', color: p.show_on_homepage ? '#ff4d00' : '#888' }}>
+                    Show on Homepage
+                  </span>
+                </label>
+                <div style={{ display: 'flex', gap: '8px', marginLeft: 'auto' }}>
+                  <Btn onClick={() => saveRow('projects', projects[i])} small disabled={saving}>Save</Btn>
+                  <Btn onClick={() => deleteRow('projects', p.id)} variant="danger" small>Delete</Btn>
+                </div>
               </div>
 
             </div>
