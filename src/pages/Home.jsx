@@ -6,6 +6,7 @@ import AboutText from '../components/AboutText'
 import Services from '../components/Services'
 import Portfolio from '../components/Portfolio'
 import MyShots from '../components/MyShots'
+import MyVideos from '../components/MyVideos'
 import Footer from '../components/Footer'
 import GradientText from '../components/reactbits/GradientText'
 
@@ -48,6 +49,12 @@ export default function Home() {
   const bgRef = useRef()
   const contentRef = useRef()
   const rafRef = useRef()
+
+  const servicesRef = useRef()
+  const portfolioRef = useRef()
+  const myShotsRef = useRef()
+  const framesRef = useRef()
+  const touchStartRef = useRef(null)
 
   const [isMobile, setIsMobile] = useState(
     typeof window !== 'undefined' ? window.matchMedia('(max-width: 809px)').matches : false
@@ -110,6 +117,42 @@ export default function Home() {
     return () => {
       window.removeEventListener('scroll', onScroll)
       if (rafRef.current) cancelAnimationFrame(rafRef.current)
+    }
+  }, [])
+
+  // Swipe left/right on mobile to jump between Services / Portfolio / MyShots
+  useEffect(() => {
+    const handleTouchStart = (e) => {
+      if (!isMobileRef.current) return
+      touchStartRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY }
+    }
+    const handleTouchEnd = (e) => {
+      if (!isMobileRef.current || !touchStartRef.current) return
+      const dx = e.changedTouches[0].clientX - touchStartRef.current.x
+      const dy = e.changedTouches[0].clientY - touchStartRef.current.y
+      touchStartRef.current = null
+      // Must be clearly horizontal (≥60px) and more horizontal than vertical
+      if (Math.abs(dx) < 60 || Math.abs(dx) < Math.abs(dy) * 1.5) return
+      const sections = [servicesRef, portfolioRef, myShotsRef, framesRef].filter(r => r.current)
+      const midY = window.scrollY + window.innerHeight / 2
+      let closestIdx = 0, closestDist = Infinity
+      sections.forEach((ref, i) => {
+        const el = ref.current
+        const dist = Math.abs((el.offsetTop + el.offsetHeight / 2) - midY)
+        if (dist < closestDist) { closestDist = dist; closestIdx = i }
+      })
+      const nextIdx = dx < 0
+        ? Math.min(closestIdx + 1, sections.length - 1)
+        : Math.max(closestIdx - 1, 0)
+      if (nextIdx !== closestIdx) {
+        sections[nextIdx].current.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      }
+    }
+    window.addEventListener('touchstart', handleTouchStart, { passive: true })
+    window.addEventListener('touchend', handleTouchEnd, { passive: true })
+    return () => {
+      window.removeEventListener('touchstart', handleTouchStart)
+      window.removeEventListener('touchend', handleTouchEnd)
     }
   }, [])
 
@@ -278,19 +321,26 @@ export default function Home() {
       <AboutText />
 
       {/* ══════════════ SECTION 4: SERVICES ══════════════ */}
-      <Services />
+      <div ref={servicesRef}><Services /></div>
 
       {/* ══════════════ SECTION 5: PORTFOLIO (homepage picks) ══════════════ */}
-      <Portfolio homepageOnly />
+      <div ref={portfolioRef}><Portfolio homepageOnly /></div>
 
       {/* ══════════════ SECTION 6: MY SHOTS (preview — 6 photos) ══════════════ */}
-      <MyShots
+      <div ref={myShotsRef}><MyShots
         limit={6}
         title="See Through My Lens"
         subtitle="Browse through a collection of my favorite shots & some moments captured while exploring the beauty of nature."
-      />
+      /></div>
 
-      {/* ══════════════ SECTION 7: FOOTER CTA ══════════════ */}
+      {/* ══════════════ SECTION 7: FRAMES (preview — 4 videos) ══════════════ */}
+      <div ref={framesRef}><MyVideos
+        limit={4}
+        title="Frames"
+        subtitle="Short cinematic moments — 5 to 10 seconds of light, motion & life."
+      /></div>
+
+      {/* ══════════════ SECTION 8: FOOTER CTA ══════════════ */}
       <Footer />
 
       <style>{`
