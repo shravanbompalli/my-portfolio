@@ -414,7 +414,7 @@ export default function MyVideos({ limit, title = 'Frames', subtitle }) {
   return <VideosSection videos={shown} limit={limit} title={title} subtitle={subtitle} hasMore={hasMore} />
 }
 
-function VideosSection({ videos, limit, title, subtitle, hasMore }) {
+function VideosSection({ videos, title, subtitle, hasMore }) {
   const [isMobile, setIsMobile] = useState(
     typeof window !== 'undefined' ? window.matchMedia('(pointer: coarse)').matches : false
   )
