@@ -303,18 +303,14 @@ function LayoutCanvas({ images, displayStyle, onSave }) {
   const dragIndex = useRef(null)
   const [dropTarget, setDropTarget] = useState(null)
 
-  // Scale so ALL images are visible at once — fit by width OR height, whichever is tighter
-  const MAX_CANVAS_H = 420
-
+  // Scale to fit container width — CSS zoom affects layout so vertical scroll works correctly
   function applyScale() {
     if (!wrapperRef.current || !gridRef.current) return
     const w = wrapperRef.current.offsetWidth
-    const sW = w / 1400
-    const sH = MAX_CANVAS_H / gridRef.current.scrollHeight
-    const s = Math.min(sW, sH)
-    gridRef.current.style.transform = `scale(${s})`
-    gridRef.current.style.transformOrigin = 'top left'
-    wrapperRef.current.style.height = `${gridRef.current.scrollHeight * s}px`
+    const s = w / 1400
+    gridRef.current.style.zoom = s
+    gridRef.current.style.transform = 'none'
+    gridRef.current.style.transformOrigin = ''
   }
 
   useEffect(() => {
@@ -352,7 +348,7 @@ function LayoutCanvas({ images, displayStyle, onSave }) {
       <p style={{ fontFamily: '"Geist",sans-serif', fontSize: '10px', color: accent, margin: '0 0 8px', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 600 }}>
         🗂 Layout Editor — drag to reorder {cols === 3 ? '(3-col portrait)' : '(2-col landscape)'} · {isStack ? 'row flow' : 'masonry flow'}
       </p>
-      <div ref={wrapperRef} style={{ width: '100%', overflow: 'hidden', position: 'relative', borderRadius: '8px', border: `1px solid ${border}` }}>
+      <div ref={wrapperRef} style={{ width: '100%', overflowY: 'auto', maxHeight: '520px', position: 'relative', borderRadius: '8px', border: `1px solid ${border}` }}>
         <div
           ref={gridRef}
           style={{
@@ -1070,8 +1066,8 @@ export default function AdminPanel() {
                   </div>
                 </div>
                 <div>
-                  <p style={{ fontFamily: '"Geist",sans-serif', fontSize: '11px', color: '#a855f7', margin: '0 0 6px', textTransform: 'uppercase' }}>🎬 Project Video</p>
-                  <VideoUploader value={p.video_url} label="Project video" height="140px"
+                  <p style={{ fontFamily: '"Geist",sans-serif', fontSize: '11px', color: '#a855f7', margin: '0 0 6px', textTransform: 'uppercase' }}>🎬 BTS Video (Behind The Scenes)</p>
+                  <VideoUploader value={p.video_url} label="Upload BTS video" height="140px"
                     onUpload={url => { const u = [...projects]; u[i] = { ...u[i], video_url: url }; setProjects(u); saveRow('projects', u[i]) }} />
                 </div>
               </div>
@@ -1111,7 +1107,7 @@ export default function AdminPanel() {
               {/* Gallery Videos */}
               <div style={{ marginTop: '14px' }}>
                 <p style={{ fontFamily: '"Geist",sans-serif', fontSize: '11px', color: '#a855f7', margin: '0 0 10px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>🎬 Gallery Videos</p>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxHeight: (p.gallery_videos || []).length > 2 ? '560px' : 'none', overflowY: (p.gallery_videos || []).length > 2 ? 'auto' : 'visible', paddingRight: (p.gallery_videos || []).length > 2 ? '4px' : '0' }}>
                   {(p.gallery_videos || []).map((vid, vi) => (
                     <div key={vi} style={{ backgroundColor: '#0a0a0a', borderRadius: '10px', padding: '12px', border: `1px solid ${border}` }}>
                       <p style={{ fontFamily: '"Geist",sans-serif', fontSize: '11px', color: '#a855f7', margin: '0 0 8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>🎬 Video {vi + 1}</p>

@@ -33,7 +33,7 @@ export default function MyShotsPage() {
     <div style={{ minHeight: '100vh', backgroundColor: '#f5f5f5' }}>
 
       {/* ── Navbar ── */}
-      <div style={{
+      <div className="myshots-page-nav" style={{
         display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start',
         padding: 'clamp(12px, 4vw, 20px) clamp(16px, 5vw, 40px)', borderBottom: '1px solid rgba(0,0,0,0.06)',
       }}>
@@ -140,6 +140,7 @@ export default function MyShotsPage() {
           font-family: "Geist", sans-serif !important;
         }
         @media (max-width: 809px) {
+          .myshots-page-nav { justify-content: center !important; }
           .nav-contact, .nav-info { display: none !important; }
           .myshots-headline-wrap {
             font-size: clamp(32px, 10vw, 64px) !important;

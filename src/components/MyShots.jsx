@@ -122,7 +122,7 @@ function MagneticCard({ children, i, isMobile }) {
 /*
   ParallaxImage — image moves slightly on scroll for depth effect
 */
-function ParallaxImage({ src, alt, aspect, i, isHovered, isMobile, scrollY }) {
+function ParallaxImage({ src, videoSrc, mediaType, alt, aspect, i, isHovered, isMobile, scrollY }) {
   const ref = useRef(null)
   const [inputRange, setInputRange] = useState([0, 1])
 
@@ -148,7 +148,20 @@ function ParallaxImage({ src, alt, aspect, i, isHovered, isMobile, scrollY }) {
         }}
         transition={{ type: 'spring', stiffness: 150, damping: 20 }}
       >
-        {src ? (
+        {mediaType === 'video' && videoSrc ? (
+          <video
+            src={videoSrc}
+            autoPlay
+            loop
+            muted
+            playsInline
+            style={{
+              width: '100%', display: 'block',
+              aspectRatio: aspect || '3/4',
+              objectFit: 'cover',
+            }}
+          />
+        ) : src ? (
           <img
             src={src}
             alt={alt}
@@ -331,6 +344,8 @@ function ShotsSection({ shots, limit, title, subtitle, hasMore }) {
                 <>
                   <ParallaxImage
                     src={shot.image_url}
+                    videoSrc={shot.video_url}
+                    mediaType={shot.media_type}
                     alt={shot.title || 'Photo'}
                     aspect={shot.aspect_ratio}
                     i={i}

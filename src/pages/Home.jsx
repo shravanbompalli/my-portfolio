@@ -157,7 +157,7 @@ export default function Home() {
         </div>
 
         <div ref={contentRef} style={{ position: 'absolute', inset: 0, zIndex: 2, display: 'flex', flexDirection: 'column', willChange: 'transform' }}>
-          <div style={{
+          <div className="hero-top-bar" style={{
             display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start',
             padding: isMobile ? 'clamp(12px, 4vw, 20px) clamp(16px, 5vw, 40px)' : '20px 40px',
             background: 'linear-gradient(180deg, rgba(0,0,0,0.25) 14.57%, transparent 100%)',
@@ -178,6 +178,8 @@ export default function Home() {
               <span style={{ fontFamily: '"Geist",sans-serif', fontSize: '12px', color: '#888' }}>{brand?.location || 'Hyderabad, India'}</span>
             </div>
           </div>
+
+          {isMobile && <div style={{ flex: 1 }} />}
 
           <div style={{ flex: 1, display: isMobile ? 'none' : 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 40px' }}>
             <div style={{
@@ -223,13 +225,13 @@ export default function Home() {
             <div style={{ opacity: loaded ? 1 : 0, transform: loaded ? 'translateY(0)' : 'translateY(60px)', transition: 'all 0.8s ease 0.4s' }}>
               {isGradient ? (
                 <GradientText colors={['#ffffff', '#ff4d00', '#ffffff']} animationSpeed={6}>
-                  <h1 style={{ fontFamily: '"Geist",sans-serif', fontSize: isMobile ? 'clamp(22px, 10vw, 48px)' : 'clamp(48px,11vw,148px)', fontWeight: 700, letterSpacing: '-0.04em', lineHeight: '100%', margin: 0 }}>
+                  <h1 style={{ fontFamily: '"Geist",sans-serif', fontSize: isMobile ? 'clamp(20px, 8vw, 40px)' : 'clamp(48px,11vw,148px)', fontWeight: 700, letterSpacing: '-0.04em', lineHeight: '100%', margin: 0 }}>
                     {hero?.headline || 'CINEMATOGRAPHER'}
                   </h1>
                 </GradientText>
               ) : (
                 <h1 style={{
-                  fontFamily: '"Geist",sans-serif', fontSize: isMobile ? 'clamp(22px, 10vw, 48px)' : 'clamp(48px,11vw,148px)', fontWeight: 700,
+                  fontFamily: '"Geist",sans-serif', fontSize: isMobile ? 'clamp(20px, 8vw, 40px)' : 'clamp(48px,11vw,148px)', fontWeight: 700,
                   letterSpacing: '-0.04em', lineHeight: '100%', margin: 0,
                   color: tc, mixBlendMode: isWhite ? 'difference' : 'normal',
                 }}>
@@ -295,6 +297,9 @@ export default function Home() {
         @media (max-width: 1279px) {
           .hero-nav-contact { display: none !important; }
           .hero-nav-info { display: none !important; }
+        }
+        @media (max-width: 809px) {
+          .hero-top-bar { justify-content: center !important; }
         }
       `}</style>
     </div>

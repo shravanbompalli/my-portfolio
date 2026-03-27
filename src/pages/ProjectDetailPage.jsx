@@ -415,7 +415,7 @@ function InfiniteGalleryStrip({ images }) {
           const url = typeof img === 'string' ? img : img?.url
           if (!url) return null
           return (
-            <div key={i} style={{ flexShrink: 0, height: '420px', width: '560px', borderRadius: '12px', overflow: 'hidden', backgroundColor: '#ddd' }}>
+            <div key={i} style={{ flexShrink: 0, height: 'clamp(200px,55vw,420px)', width: 'clamp(280px,75vw,560px)', borderRadius: '12px', overflow: 'hidden', backgroundColor: '#ddd' }}>
               <img src={url} alt={`Shot ${i + 1}`}
                 style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', filter: 'saturate(1.3)', pointerEvents: 'none' }} />
             </div>
@@ -785,8 +785,9 @@ export default function ProjectDetailPage() {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true, amount: 0.08 }}
                   transition={{ ...spring, delay: 0.05 * g }}
+                  className={group.portrait ? 'portrait-video-group' : ''}
                   style={group.portrait
-                    ? { display: 'flex', gap: '16px', justifyContent: 'center', alignItems: 'flex-start' }
+                    ? { display: 'flex', flexWrap: 'wrap', gap: '16px', justifyContent: 'center', alignItems: 'flex-start' }
                     : {}
                   }
                 >
@@ -823,7 +824,7 @@ export default function ProjectDetailPage() {
               whileInView={{ opacity: 1 }}
               viewport={{ once: true }}
               transition={{ duration: 0.8 }}
-              style={{ height: '600px', position: 'relative', width: '100%' }}
+              style={{ height: 'clamp(260px,80vw,600px)', position: 'relative', width: '100%' }}
             >
               <CircularGallery
                 items={gallery
@@ -932,6 +933,8 @@ export default function ProjectDetailPage() {
           .project-info-grid { flex-direction: column !important; gap: 32px !important; }
           .project-info-grid > div:last-child { flex: 1 1 100% !important; padding-top: 0 !important; }
           .gallery-grid { columns: 1 !important; }
+          .portrait-video-group { flex-direction: column !important; align-items: stretch !important; }
+          .portrait-video-group > * { width: 100% !important; }
         }
       `}</style>
     </div>

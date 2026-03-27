@@ -172,7 +172,7 @@ export default function Portfolio({ homepageOnly }) {
                     }}>
                       {p.title}
                     </h4>
-                    <p style={{
+                    <p className="portfolio-card-desc" style={{
                       fontFamily: '"Geist", sans-serif',
                       fontSize: 'clamp(13px, 1.2vw, 16px)',
                       fontWeight: 400, color: 'rgba(255,255,255,0.7)',
@@ -191,6 +191,12 @@ export default function Portfolio({ homepageOnly }) {
       <style>{`
         @media (max-width: 809px) {
           .portfolio-grid { columns: 1 !important; }
+          .portfolio-card-desc {
+            display: -webkit-box !important;
+            -webkit-line-clamp: 2 !important;
+            -webkit-box-orient: vertical !important;
+            overflow: hidden !important;
+          }
         }
       `}</style>
     </section>
