@@ -53,6 +53,7 @@ export default function TestimonialHighlight() {
   return (
     <section
       ref={sectionRef}
+      className="testimonial-section"
       style={{
         backgroundColor: '#f5f5f5',
         padding: '0 clamp(18px, 4vw, 40px)',
@@ -248,9 +249,13 @@ export default function TestimonialHighlight() {
 
       <style>{`
         @media (max-width: 809px) {
+          .testimonial-section { overflow: hidden !important; }
           .testimonial-main-row { flex-direction: column !important; align-items: stretch !important; }
-          .testimonial-images { flex: 1 1 100% !important; margin-top: 20px !important; }
-          .testimonial-images > div:last-child { margin-top: 0 !important; }
+          .testimonial-images {
+            flex: 1 1 100% !important;
+            margin-top: 20px !important;
+            align-items: flex-start !important;
+          }
         }
         @media (min-width: 810px) and (max-width: 1279px) {
           .testimonial-images { flex: 0 0 40% !important; }

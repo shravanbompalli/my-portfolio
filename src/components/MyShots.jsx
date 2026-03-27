@@ -128,15 +128,16 @@ function ParallaxImage({ src, videoSrc, mediaType, alt, aspect, i, isHovered, is
   const [inputRange, setInputRange] = useState([0, 1])
 
   useLayoutEffect(() => {
+    if (isMobile) return // parallax disabled on mobile — skip measurement
     if (!ref.current) return
     const rect = ref.current.getBoundingClientRect()
     const top = rect.top + window.scrollY
     setInputRange([top - window.innerHeight, top + rect.height])
-  }, [])
+  }, [isMobile])
 
-  const yRange = isMobile
-    ? [12 + (i % 3) * 4, -12 - (i % 3) * 4]
-    : [30 + (i % 3) * 10, -30 - (i % 3) * 10]
+  // On mobile: disable parallax entirely — avoids the inputRange=[0,1] initial snap
+  // (useLayoutEffect runs after mount so inputRange is wrong at first render → visible y=12px jump)
+  const yRange = isMobile ? [0, 0] : [30 + (i % 3) * 10, -30 - (i % 3) * 10]
   const y = useTransform(scrollY, inputRange, yRange)
 
   return (
