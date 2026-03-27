@@ -118,7 +118,7 @@ export default function Navbar() {
               <motion.div
                 className="flex-1 flex flex-col justify-center"
                 style={{
-                  padding: '80px 32px 32px',
+                  padding: 'clamp(72px,10vw,80px) clamp(16px,4vw,32px) clamp(16px,4vw,32px)',
                   borderRight: '1px solid rgba(255,255,255,0.06)',
                 }}
                 variants={leftPanelVariants}
@@ -149,7 +149,7 @@ export default function Navbar() {
                       variants={linkItemVariants}
                       style={{
                         fontFamily: '"Geist", sans-serif',
-                        fontSize: '32px',
+                        fontSize: 'clamp(22px,5.5vw,32px)',
                         fontWeight: 500,
                         color: '#fff',
                         textDecoration: 'none',
@@ -168,7 +168,7 @@ export default function Navbar() {
               {/* Right panel — Social + Contact */}
               <motion.div
                 className="flex-1 flex flex-col justify-between"
-                style={{ padding: '80px 32px 32px' }}
+                style={{ padding: 'clamp(72px,10vw,80px) clamp(16px,4vw,32px) clamp(16px,4vw,32px)' }}
                 variants={rightPanelVariants}
                 initial="initial"
                 animate="animate"
@@ -194,7 +194,7 @@ export default function Navbar() {
                         variants={linkItemVariants}
                         style={{
                           fontFamily: '"Geist", sans-serif',
-                          fontSize: '24px',
+                          fontSize: 'clamp(18px,4.5vw,24px)',
                           fontWeight: 500,
                           color: '#fff',
                           textDecoration: 'none',
@@ -215,7 +215,7 @@ export default function Navbar() {
                         variants={linkItemVariants}
                         style={{
                           fontFamily: '"Geist", sans-serif',
-                          fontSize: '24px',
+                          fontSize: 'clamp(18px,4.5vw,24px)',
                           fontWeight: 500,
                           color: '#fff',
                           textDecoration: 'none',

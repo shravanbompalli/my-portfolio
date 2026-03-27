@@ -33,9 +33,7 @@ html {
   color: var(--bg);
 }
 
-html {
-  scroll-behavior: smooth;
-}
+/* scroll-behavior: smooth removed — Lenis handles smooth scroll via RAF */
 
 /* Scroll progress bar — desktop only */
 @media (max-width: 809px) {

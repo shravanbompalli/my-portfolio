@@ -157,7 +157,7 @@ export default function Home() {
         </div>
 
         <div ref={contentRef} style={{ position: 'absolute', inset: 0, zIndex: 2, display: 'flex', flexDirection: 'column', willChange: 'transform' }}>
-          <div style={{
+          <div className="hero-top-bar" style={{
             display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start',
             padding: isMobile ? 'clamp(12px, 4vw, 20px) clamp(16px, 5vw, 40px)' : '20px 40px',
             background: 'linear-gradient(180deg, rgba(0,0,0,0.25) 14.57%, transparent 100%)',
@@ -178,6 +178,8 @@ export default function Home() {
               <span style={{ fontFamily: '"Geist",sans-serif', fontSize: '12px', color: '#888' }}>{brand?.location || 'Hyderabad, India'}</span>
             </div>
           </div>
+
+          {isMobile && <div style={{ flex: 1 }} />}
 
           <div style={{ flex: 1, display: isMobile ? 'none' : 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 40px' }}>
             <div style={{
@@ -213,21 +215,23 @@ export default function Home() {
           </div>
 
           <div style={{ padding: isMobile ? '0 clamp(16px, 5vw, 40px)' : '0 40px' }}>
-            <div style={{ opacity: loaded ? 1 : 0, transform: loaded ? 'translateY(0)' : 'translateY(40px)', transition: 'all 0.8s ease 0.6s', marginBottom: '8px' }}>
-              <p style={{ fontFamily: '"Geist",sans-serif', fontSize: 'clamp(18px,2.5vw,28px)', fontWeight: 500, color: isGradient ? '#eee' : tc, letterSpacing: '-0.01em', margin: 0, opacity: 0.85 }}>
-                {hero?.tagline || 'Award-winning creative'}
-              </p>
-            </div>
+            {hero?.show_tagline !== false && (
+              <div style={{ opacity: loaded ? 1 : 0, transform: loaded ? 'translateY(0)' : 'translateY(40px)', transition: 'all 0.8s ease 0.6s', marginBottom: '8px' }}>
+                <p style={{ fontFamily: '"Geist",sans-serif', fontSize: 'clamp(18px,2.5vw,28px)', fontWeight: 500, color: isGradient ? '#eee' : tc, letterSpacing: '-0.01em', margin: 0, opacity: 0.85 }}>
+                  {hero?.tagline || 'Award-winning creative'}
+                </p>
+              </div>
+            )}
             <div style={{ opacity: loaded ? 1 : 0, transform: loaded ? 'translateY(0)' : 'translateY(60px)', transition: 'all 0.8s ease 0.4s' }}>
               {isGradient ? (
                 <GradientText colors={['#ffffff', '#ff4d00', '#ffffff']} animationSpeed={6}>
-                  <h1 style={{ fontFamily: '"Geist",sans-serif', fontSize: isMobile ? 'clamp(22px, 10vw, 48px)' : 'clamp(48px,11vw,148px)', fontWeight: 700, letterSpacing: '-0.04em', lineHeight: '100%', margin: 0 }}>
+                  <h1 style={{ fontFamily: '"Geist",sans-serif', fontSize: isMobile ? 'clamp(20px, 8vw, 40px)' : 'clamp(48px,11vw,148px)', fontWeight: 700, letterSpacing: '-0.04em', lineHeight: '100%', margin: 0 }}>
                     {hero?.headline || 'CINEMATOGRAPHER'}
                   </h1>
                 </GradientText>
               ) : (
                 <h1 style={{
-                  fontFamily: '"Geist",sans-serif', fontSize: isMobile ? 'clamp(22px, 10vw, 48px)' : 'clamp(48px,11vw,148px)', fontWeight: 700,
+                  fontFamily: '"Geist",sans-serif', fontSize: isMobile ? 'clamp(20px, 8vw, 40px)' : 'clamp(48px,11vw,148px)', fontWeight: 700,
                   letterSpacing: '-0.04em', lineHeight: '100%', margin: 0,
                   color: tc, mixBlendMode: isWhite ? 'difference' : 'normal',
                 }}>
@@ -237,28 +241,32 @@ export default function Home() {
             </div>
           </div>
 
-          <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: 'stretch', opacity: loaded ? 1 : 0, transform: loaded ? 'translateY(0)' : 'translateY(-40px)', transition: 'all 0.6s ease 0.8s' }}>
-            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '8px', padding: isMobile ? '12px 16px' : '16px 40px', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
-              {social?.instagram && (
-                <a href={social.instagram} target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', gap: '8px', color: tc, textDecoration: 'none', fontFamily: '"Geist",sans-serif', fontSize: '15px' }}><Arrow /> Instagram</a>
-              )}
-              {social?.youtube && (
-                <a href={social.youtube} target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', gap: '8px', color: tc, textDecoration: 'none', fontFamily: '"Geist",sans-serif', fontSize: '15px' }}><Arrow /> YouTube</a>
-              )}
-            </div>
-            <div style={{ flex: 1, padding: isMobile ? '12px 16px' : '16px 24px', borderTop: '1px solid rgba(255,255,255,0.05)', borderLeft: isMobile ? 'none' : '1px solid rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center' }}>
-              <p style={{ fontFamily: '"Geist",sans-serif', fontSize: '14px', color: '#aaa', lineHeight: 1.5, maxWidth: '280px', margin: 0 }}>
-                {hero?.subtext || 'Capturing timeless moments that tell stories of emotion, beauty, and truth in every frame and every pose.'}
-              </p>
-            </div>
-            <div style={{ flex: 1, padding: isMobile ? '12px 16px' : '16px 40px', borderTop: '1px solid rgba(255,255,255,0.05)', borderLeft: isMobile ? 'none' : '1px solid rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: isMobile ? 'flex-start' : 'flex-end', gap: '8px' }}>
-              <span style={{ fontSize: '24px' }}>🏆</span>
-              <div>
-                <p style={{ fontFamily: '"Geist",sans-serif', fontSize: '15px', fontWeight: 500, color: tc, margin: 0 }}>{awards?.name || 'Hasselblad Award'}</p>
-                <p style={{ fontFamily: '"Geist",sans-serif', fontSize: '13px', color: tc, margin: 0, opacity: 0.6 }}>{awards?.years || '2025, 2023'}</p>
+          {hero?.show_bottom_bar !== false && (
+            <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: 'stretch', opacity: loaded ? 1 : 0, transform: loaded ? 'translateY(0)' : 'translateY(-40px)', transition: 'all 0.6s ease 0.8s' }}>
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '8px', padding: isMobile ? '12px 16px' : '16px 40px', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+                {social?.instagram && (
+                  <a href={social.instagram} target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', gap: '8px', color: tc, textDecoration: 'none', fontFamily: '"Geist",sans-serif', fontSize: '15px' }}><Arrow /> Instagram</a>
+                )}
+                {social?.youtube && (
+                  <a href={social.youtube} target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', gap: '8px', color: tc, textDecoration: 'none', fontFamily: '"Geist",sans-serif', fontSize: '15px' }}><Arrow /> YouTube</a>
+                )}
               </div>
+              <div style={{ flex: 1, padding: isMobile ? '12px 16px' : '16px 24px', borderTop: '1px solid rgba(255,255,255,0.05)', borderLeft: isMobile ? 'none' : '1px solid rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center' }}>
+                <p style={{ fontFamily: '"Geist",sans-serif', fontSize: '14px', color: '#aaa', lineHeight: 1.5, maxWidth: '280px', margin: 0 }}>
+                  {hero?.subtext || 'Capturing timeless moments that tell stories of emotion, beauty, and truth in every frame and every pose.'}
+                </p>
+              </div>
+              {hero?.show_award !== false && (
+                <div style={{ flex: 1, padding: isMobile ? '12px 16px' : '16px 40px', borderTop: '1px solid rgba(255,255,255,0.05)', borderLeft: isMobile ? 'none' : '1px solid rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: isMobile ? 'flex-start' : 'flex-end', gap: '8px' }}>
+                  <span style={{ fontSize: '24px' }}>🏆</span>
+                  <div>
+                    <p style={{ fontFamily: '"Geist",sans-serif', fontSize: '15px', fontWeight: 500, color: tc, margin: 0 }}>{awards?.name || 'Hasselblad Award'}</p>
+                    <p style={{ fontFamily: '"Geist",sans-serif', fontSize: '13px', color: tc, margin: 0, opacity: 0.6 }}>{awards?.years || '2025, 2023'}</p>
+                  </div>
+                </div>
+              )}
             </div>
-          </div>
+          )}
           <div style={{ height: '16px' }} />
         </div>
       </section>
@@ -272,8 +280,8 @@ export default function Home() {
       {/* ══════════════ SECTION 4: SERVICES ══════════════ */}
       <Services />
 
-      {/* ══════════════ SECTION 5: PORTFOLIO (preview — 3 projects) ══════════════ */}
-      <Portfolio limit={3} />
+      {/* ══════════════ SECTION 5: PORTFOLIO (homepage picks) ══════════════ */}
+      <Portfolio homepageOnly />
 
       {/* ══════════════ SECTION 6: MY SHOTS (preview — 6 photos) ══════════════ */}
       <MyShots
@@ -289,6 +297,9 @@ export default function Home() {
         @media (max-width: 1279px) {
           .hero-nav-contact { display: none !important; }
           .hero-nav-info { display: none !important; }
+        }
+        @media (max-width: 809px) {
+          .hero-top-bar { justify-content: center !important; }
         }
       `}</style>
     </div>
