@@ -454,6 +454,7 @@ export default function AdminPanel() {
   const [reviews, setReviews] = useState([])
   const [faqs, setFaqs] = useState([])
   const [shots, setShots] = useState([])
+  const [videos, setVideos] = useState([])
   const [collabs, setCollabs] = useState([])
   const [messages, setMessages] = useState([])
   const [newTool, setNewTool] = useState('')
@@ -470,13 +471,14 @@ export default function AdminPanel() {
   useEffect(() => { if (authed) loadAll() }, [authed])
 
   const loadAll = async () => {
-    const [s, sv, p, r, f, sh, c, m] = await Promise.all([
+    const [s, sv, p, r, f, sh, v, c, m] = await Promise.all([
       supabase.from('site_settings').select('*'),
       supabase.from('services').select('*').order('sort_order'),
       supabase.from('projects').select('*').order('sort_order'),
       supabase.from('reviews').select('*').order('sort_order'),
       supabase.from('faqs').select('*').order('sort_order'),
       supabase.from('my_shots').select('*').order('sort_order'),
+      supabase.from('my_videos').select('*').order('sort_order'),
       supabase.from('collaborations').select('*').order('sort_order'),
       supabase.from('contact_messages').select('*').order('created_at', { ascending: false }),
     ])
@@ -486,6 +488,7 @@ export default function AdminPanel() {
     if (r.data) setReviews(r.data)
     if (f.data) setFaqs(f.data)
     if (sh.data) setShots(sh.data)
+    if (v.data) setVideos(v.data)
     if (c.data) setCollabs(c.data)
     if (m.data) setMessages(m.data)
   }
@@ -1392,6 +1395,67 @@ export default function AdminPanel() {
               onMouseLeave={e => e.currentTarget.style.borderColor = '#2d1f4e'}>
               <span style={{ fontSize: '20px', color: '#a855f7' }}>🎬</span>
               <span style={{ fontFamily: '"Geist",sans-serif', fontSize: '11px', color: '#a855f7' }}>+ Video</span>
+            </div>
+          </div>
+        </Section>
+
+        {/* ═══ FRAMES ═══ */}
+        <Section title="🎬 Frames" badge={videos.length}>
+          <p style={{ fontFamily: '"Geist",sans-serif', fontSize: '11px', color: gray, margin: '0 0 6px', textTransform: 'uppercase' }}>Frames Page Hero Video</p>
+          <p style={{ fontFamily: '"Geist",sans-serif', fontSize: '11px', color: '#666', margin: '0 0 12px' }}>
+            This video plays on loop behind the "FRAMES" headline on the /frames page.
+          </p>
+          <VideoUploader
+            value={settings.frames?.value?.hero_video}
+            label="Frames Hero Video"
+            height="160px"
+            onUpload={url => saveImage('frames', 'hero_video', url)}
+          />
+          {settings.frames?.value?.hero_video && (
+            <div style={{ marginTop: '8px', display: 'flex', gap: '8px' }}>
+              <Btn onClick={() => saveImage('frames', 'hero_video', '')} variant="danger" small>Remove Video</Btn>
+              <a href={settings.frames?.value?.hero_video} target="_blank" rel="noopener"
+                style={{ fontFamily: '"Geist",sans-serif', fontSize: '12px', color: '#a855f7', textDecoration: 'none', display: 'flex', alignItems: 'center' }}>
+                Preview ↗
+              </a>
+            </div>
+          )}
+          <div style={{ marginTop: '20px' }} />
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: '10px' }}>
+            {videos.map((v, i) => (
+              <div key={v.id} style={{ borderRadius: '10px', overflow: 'hidden', border: `1px solid ${border}`, backgroundColor: '#0d0d0d' }}>
+                <VideoUploader value={v.video_url} label="Video" height="160px"
+                  onUpload={url => { const u = [...videos]; u[i] = { ...u[i], video_url: url }; setVideos(u); saveRow('my_videos', u[i]) }} />
+                <div style={{ padding: '8px' }}>
+                  <p style={{ fontFamily: '"Geist",sans-serif', fontSize: '10px', color: gray, margin: '0 0 4px', textTransform: 'uppercase' }}>Thumbnail override (optional)</p>
+                  <ImageUploader value={v.thumb_url} folder="frames" label="Thumb" height="60px"
+                    onUpload={url => { const u = [...videos]; u[i] = { ...u[i], thumb_url: url }; setVideos(u); saveRow('my_videos', u[i]) }} />
+                  <input value={v.title || ''} placeholder="Title" onChange={e => { const u = [...videos]; u[i].title = e.target.value; setVideos(u) }}
+                    style={{ width: '100%', fontFamily: '"Geist",sans-serif', fontSize: '11px', color: white, backgroundColor: 'transparent', border: 'none', outline: 'none', padding: '4px 0', borderBottom: `1px solid ${border}`, marginTop: '6px' }} />
+                  <input value={v.category || ''} placeholder="Category / Tag" onChange={e => { const u = [...videos]; u[i].category = e.target.value; setVideos(u) }}
+                    style={{ width: '100%', fontFamily: '"Geist",sans-serif', fontSize: '11px', color: accent, backgroundColor: 'transparent', border: 'none', outline: 'none', padding: '4px 0', marginTop: '4px', borderBottom: `1px solid ${border}` }} />
+                  <select value={v.aspect_ratio || '16/9'} onChange={e => { const u = [...videos]; u[i].aspect_ratio = e.target.value; setVideos(u) }}
+                    style={{ width: '100%', fontFamily: '"Geist",sans-serif', fontSize: '10px', color: gray, backgroundColor: '#0d0d0d', border: `1px solid ${border}`, borderRadius: '4px', padding: '4px', marginTop: '6px', outline: 'none' }}>
+                    <option value="16/9">Landscape (16:9)</option>
+                    <option value="9/16">Portrait (9:16)</option>
+                    <option value="1/1">Square (1:1)</option>
+                    <option value="4/3">Standard (4:3)</option>
+                    <option value="4/5">Instagram (4:5)</option>
+                  </select>
+                  <div style={{ display: 'flex', gap: '4px', marginTop: '6px' }}>
+                    <Btn onClick={() => saveRow('my_videos', videos[i])} small>Save</Btn>
+                    <Btn onClick={() => deleteRow('my_videos', v.id)} variant="danger" small>×</Btn>
+                  </div>
+                </div>
+              </div>
+            ))}
+            <div onClick={() => saveRow('my_videos', { title: '', category: '', video_url: '', thumb_url: '', aspect_ratio: '16/9', sort_order: videos.length + 1, is_active: true })}
+              style={{ height: '160px', borderRadius: '10px', border: `2px dashed ${border}`, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', gap: '4px', transition: 'border-color 0.2s' }}
+              onMouseEnter={e => e.currentTarget.style.borderColor = accent}
+              onMouseLeave={e => e.currentTarget.style.borderColor = border}>
+              <span style={{ fontSize: '20px', color: gray }}>🎬</span>
+              <span style={{ fontFamily: '"Geist",sans-serif', fontSize: '11px', color: gray }}>+ Frame</span>
             </div>
           </div>
         </Section>
