@@ -5,26 +5,28 @@ import { supabase } from '../lib/supabase'
 
 const spring = { type: 'spring', stiffness: 70, damping: 12, mass: 0.8 }
 
-export default function Portfolio({ limit }) {
+export default function Portfolio({ homepageOnly }) {
   const [projects, setProjects] = useState([])
   const [hov, setHov] = useState(null)
 
   useEffect(() => {
     async function load() {
-      const { data } = await supabase
+      let query = supabase
         .from('projects')
         .select('*')
         .eq('is_active', true)
         .order('sort_order')
+      if (homepageOnly) query = query.eq('show_on_homepage', true)
+      const { data } = await query
       if (data) setProjects(data)
     }
     load()
-  }, [])
+  }, [homepageOnly])
 
   if (!projects.length) return null
 
-  const shown = limit ? projects.slice(0, limit) : projects
-  const hasMore = limit && projects.length > limit
+  const shown = projects
+  const hasMore = homepageOnly
 
   return (
     <section
@@ -116,13 +118,27 @@ export default function Portfolio({ limit }) {
                     filter: 'saturate(1.4)',
                     transform: hov === i ? 'scale(1.05)' : 'scale(1)',
                     transition: 'transform 0.6s ease',
+                    ...(p.cover_aspect_ratio && p.cover_aspect_ratio !== 'auto'
+                      ? { aspectRatio: p.cover_aspect_ratio, overflow: 'hidden' }
+                      : {}),
                   }}>
                     {p.cover_image ? (
-                      <img src={p.cover_image} alt={p.title}
-                        style={{ width: '100%', display: 'block', objectFit: 'cover' }} />
+                      <img
+                        src={p.cover_image}
+                        alt={p.title}
+                        style={{
+                          width: '100%', display: 'block', objectFit: 'cover',
+                          ...(p.cover_aspect_ratio && p.cover_aspect_ratio !== 'auto'
+                            ? { height: '100%' }
+                            : {}),
+                        }}
+                      />
                     ) : (
                       <div style={{
-                        width: '100%', aspectRatio: i % 2 === 0 ? '4/5' : '3/4',
+                        width: '100%',
+                        aspectRatio: p.cover_aspect_ratio && p.cover_aspect_ratio !== 'auto'
+                          ? p.cover_aspect_ratio
+                          : i % 2 === 0 ? '4/5' : '3/4',
                         background: `linear-gradient(135deg, hsl(${i * 60}, 10%, 25%), hsl(${i * 60}, 10%, 15%))`,
                       }} />
                     )}

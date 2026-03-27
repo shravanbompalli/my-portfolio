@@ -103,64 +103,66 @@ export default function AboutPage() {
         </div>
       </div>
 
-      {/* ── Hero: full-bleed image ── */}
-      <section style={{ position: 'relative', height: '100dvh', overflow: 'hidden', backgroundColor: '#000' }}>
-        {/* Background image */}
+      {/* ── Hero: portrait photo left, text right ── */}
+      <section className="about-hero" style={{
+        height: '100dvh', backgroundColor: '#f5f5f5',
+        display: 'flex', alignItems: 'stretch',
+        padding: 'clamp(16px, 3vw, 40px)',
+        gap: 'clamp(24px, 4vw, 60px)',
+      }}>
+        {/* Portrait photo — natural 9:16, full height */}
         <motion.div
-          initial={{ scale: 1.08 }}
-          animate={{ scale: 1 }}
-          transition={{ type: 'spring', stiffness: 40, damping: 10 }}
-          style={{ position: 'absolute', inset: 0 }}
+          initial={{ opacity: 0, x: -40 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ type: 'spring', stiffness: 50, damping: 14, delay: 0.1 }}
+          className="about-hero-photo"
+          style={{
+            flexShrink: 0,
+            width: 'auto',
+            height: '100%',
+            borderRadius: '16px',
+            overflow: 'hidden',
+            aspectRatio: '9 / 16',
+          }}
         >
           {about?.about_image ? (
             <img
               src={about.about_image}
               alt=""
-              style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+              style={{ width: '100%', height: '100%', display: 'block', objectFit: 'cover', objectPosition: 'top' }}
             />
           ) : (
-            <div style={{ width: '100%', height: '100%', background: 'linear-gradient(135deg, #1a1a1a, #000)' }} />
+            <div style={{ width: '100%', height: '100%', background: 'linear-gradient(135deg, #ddd, #ccc)' }} />
           )}
         </motion.div>
 
-        {/* Dark overlay */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 1.2, ease: 'easeOut', delay: 0.2 }}
-          style={{ position: 'absolute', inset: 0, backgroundColor: 'rgba(0,0,0,0.45)', zIndex: 1 }}
-        />
-
-        {/* Content */}
+        {/* Text side */}
         <div style={{
-          position: 'absolute', inset: 0, zIndex: 2,
-          display: 'flex', flexDirection: 'column', justifyContent: 'flex-end',
-          padding: 'clamp(24px, 6vw, 80px)',
+          flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end',
+          paddingBottom: 'clamp(16px, 3vw, 40px)',
         }}>
-          {/* ABOUT ME headline via BlurText */}
+          {/* ABOUT ME headline */}
           <div className="about-headline-wrap" style={{
-            fontSize: 'clamp(48px, 11vw, 148px)', fontWeight: 700,
-            letterSpacing: '-0.04em', color: '#fff', lineHeight: 1, marginBottom: '16px',
+            fontSize: 'clamp(40px, 7vw, 120px)', fontWeight: 700,
+            letterSpacing: '-0.04em', color: '#000', lineHeight: 1, marginBottom: '20px',
           }}>
             <BlurText text="ABOUT ME" delay={100} animateBy="words" direction="bottom" />
           </div>
 
-          {/* Tagline — uses animate (not whileInView) since it's above the fold */}
           <motion.p
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ type: 'spring', stiffness: 60, damping: 14, delay: 0.5 }}
             style={{
               fontFamily: '"Geist", sans-serif',
-              fontSize: 'clamp(16px, 2vw, 22px)',
-              color: 'rgba(255,255,255,0.7)',
-              margin: '0 0 28px', lineHeight: 1.5,
+              fontSize: 'clamp(15px, 1.6vw, 22px)',
+              color: '#606060',
+              margin: '0 0 32px', lineHeight: 1.6, maxWidth: '480px',
             }}
           >
             The person behind the lens.
           </motion.p>
 
-          {/* CTA — uses animate (not whileInView) since it's above the fold */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -204,7 +206,18 @@ export default function AboutPage() {
         @media (max-width: 809px) {
           .nav-contact, .nav-info { display: none !important; }
           .about-headline-wrap {
-            font-size: clamp(32px, 10vw, 64px) !important;
+            font-size: clamp(28px, 9vw, 56px) !important;
+          }
+          .about-hero {
+            flex-direction: column !important;
+            height: auto !important;
+            min-height: 100dvh !important;
+          }
+          .about-hero-photo {
+            width: 100% !important;
+            height: 60vw !important;
+            aspect-ratio: unset !important;
+            flex-shrink: 0 !important;
           }
         }
       `}</style>

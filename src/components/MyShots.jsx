@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useLayoutEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { motion, useScroll, useTransform, useMotionValue, useSpring } from 'framer-motion'
 import { supabase } from '../lib/supabase'
@@ -55,7 +55,7 @@ function MagneticCard({ children, i, isMobile }) {
         x: dir.x,
         rotate: dir.rotate,
         scale: 0.85,
-        filter: 'blur(8px)',
+        filter: 'blur(3px)',
       }}
       whileInView={isMobile ? { opacity: 1, y: 0 } : {
         opacity: 1,
@@ -122,18 +122,21 @@ function MagneticCard({ children, i, isMobile }) {
 /*
   ParallaxImage — image moves slightly on scroll for depth effect
 */
-function ParallaxImage({ src, alt, aspect, i, isHovered, isMobile }) {
+function ParallaxImage({ src, alt, aspect, i, isHovered, isMobile, scrollY }) {
   const ref = useRef(null)
-  const { scrollYProgress } = useScroll({
-    target: ref,
-    offset: ['start end', 'end start'],
-  })
-  // Mobile: tighter range so image drifts subtly inside single-column cards
-  // Desktop: wider range for masonry depth effect
+  const [inputRange, setInputRange] = useState([0, 1])
+
+  useLayoutEffect(() => {
+    if (!ref.current) return
+    const rect = ref.current.getBoundingClientRect()
+    const top = rect.top + window.scrollY
+    setInputRange([top - window.innerHeight, top + rect.height])
+  }, [])
+
   const yRange = isMobile
     ? [12 + (i % 3) * 4, -12 - (i % 3) * 4]
     : [30 + (i % 3) * 10, -30 - (i % 3) * 10]
-  const y = useTransform(scrollYProgress, [0, 1], yRange)
+  const y = useTransform(scrollY, inputRange, yRange)
 
   return (
     <div ref={ref} style={{ overflow: 'hidden' }}>
@@ -203,7 +206,6 @@ export default function MyShots({ limit, title = 'See Through My Lens', subtitle
       { id: 'p7', title: 'Candid Moments', category: 'Candid', aspect_ratio: '3/4' },
       { id: 'p8', title: 'Travel Photography', category: 'Travel', aspect_ratio: '4/3' },
     ]
-    // Use placeholders as shots
     const showP = limit ? placeholders.slice(0, limit) : placeholders
     return <ShotsSection shots={showP} limit={limit} title={title} subtitle={subtitle} hasMore={!!limit} />
   }
@@ -224,6 +226,9 @@ function ShotsSection({ shots, limit, title, subtitle, hasMore }) {
     mq.addEventListener('change', handler)
     return () => mq.removeEventListener('change', handler)
   }, [])
+
+  // Single shared scroll listener for all parallax images
+  const { scrollY } = useScroll()
 
   return (
     <section
@@ -331,6 +336,7 @@ function ShotsSection({ shots, limit, title, subtitle, hasMore }) {
                     i={i}
                     isHovered={isHovered}
                     isMobile={isMobile}
+                    scrollY={scrollY}
                   />
 
                   {/* Hover overlay — slides up with blur backdrop */}
@@ -344,8 +350,6 @@ function ShotsSection({ shots, limit, title, subtitle, hasMore }) {
                       position: 'absolute', bottom: 0, left: 0, right: 0,
                       padding: '28px 16px 16px',
                       background: 'linear-gradient(transparent, rgba(0,0,0,0.75))',
-                      backdropFilter: 'blur(4px)',
-                      WebkitBackdropFilter: 'blur(4px)',
                       pointerEvents: 'none',
                     }}
                   >
@@ -376,9 +380,7 @@ function ShotsSection({ shots, limit, title, subtitle, hasMore }) {
                       <span style={{
                         fontFamily: '"Geist",sans-serif', fontSize: '12px',
                         fontWeight: 500, color: '#fff',
-                        backgroundColor: 'rgba(0,0,0,0.4)',
-                        backdropFilter: 'blur(8px)',
-                        WebkitBackdropFilter: 'blur(8px)',
+                        backgroundColor: 'rgba(0,0,0,0.55)',
                         padding: '5px 12px', borderRadius: '40px',
                       }}>
                         {shot.category}

@@ -280,10 +280,13 @@ function Section({ title, children, defaultOpen = false, badge }) {
 
 /* ── DB helper ── */
 async function directSaveField(key, field, val, setSettings, showToast) {
-  const { data, error: readErr } = await supabase.from('site_settings').select('value').eq('key', key).single()
-  if (readErr || !data) { showToast(`Read failed for ${key}`, 'error'); return }
-  const newValue = { ...data.value, [field]: val }
-  const { error: writeErr } = await supabase.from('site_settings').update({ value: newValue }).eq('key', key)
+  // maybeSingle() never errors on missing rows (unlike single())
+  const { data } = await supabase.from('site_settings').select('value').eq('key', key).maybeSingle()
+  const newValue = { ...(data?.value || {}), [field]: val }
+  // upsert creates the row if it doesn't exist yet
+  const { error: writeErr } = await supabase
+    .from('site_settings')
+    .upsert({ key, value: newValue }, { onConflict: 'key' })
   if (writeErr) { showToast(`Save failed: ${writeErr.message}`, 'error') }
   else {
     showToast(`${field} uploaded & saved!`, 'upload')
@@ -300,29 +303,27 @@ function LayoutCanvas({ images, displayStyle, onSave }) {
   const dragIndex = useRef(null)
   const [dropTarget, setDropTarget] = useState(null)
 
-  // Initial scale + height on mount and when imgs change
-  useEffect(() => {
+  // Scale so ALL images are visible at once — fit by width OR height, whichever is tighter
+  const MAX_CANVAS_H = 420
+
+  function applyScale() {
     if (!wrapperRef.current || !gridRef.current) return
     const w = wrapperRef.current.offsetWidth
-    const s = w / 1400
+    const sW = w / 1400
+    const sH = MAX_CANVAS_H / gridRef.current.scrollHeight
+    const s = Math.min(sW, sH)
     gridRef.current.style.transform = `scale(${s})`
     gridRef.current.style.transformOrigin = 'top left'
     wrapperRef.current.style.height = `${gridRef.current.scrollHeight * s}px`
-  }, [imgs.length])
+  }
 
-  // Recalculate on container resize
   useEffect(() => {
-    const obs = new ResizeObserver(([entry]) => {
-      const w = entry.contentRect.width
-      const s = w / 1400
-      if (gridRef.current) {
-        gridRef.current.style.transform = `scale(${s})`
-        gridRef.current.style.transformOrigin = 'top left'
-      }
-      if (wrapperRef.current && gridRef.current) {
-        wrapperRef.current.style.height = `${gridRef.current.scrollHeight * s}px`
-      }
-    })
+    const raf = requestAnimationFrame(applyScale)
+    return () => cancelAnimationFrame(raf)
+  }, [imgs.length, displayStyle])
+
+  useEffect(() => {
+    const obs = new ResizeObserver(() => requestAnimationFrame(applyScale))
     if (wrapperRef.current) obs.observe(wrapperRef.current)
     return () => obs.disconnect()
   }, [])
@@ -342,21 +343,26 @@ function LayoutCanvas({ images, displayStyle, onSave }) {
     return map[ar] || '16/9'
   }
 
+  // Stack display = row-major CSS grid (matches StackGallery on page)
+  // Parallax display = column-major CSS columns masonry (matches parallax grid on page)
+  const isStack = displayStyle === 'stack'
+
   return (
     <div style={{ marginTop: '16px' }}>
       <p style={{ fontFamily: '"Geist",sans-serif', fontSize: '10px', color: accent, margin: '0 0 8px', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 600 }}>
-        🗂 Layout Editor — drag to reorder {cols === 3 ? '(3-col portrait)' : '(2-col landscape)'}
+        🗂 Layout Editor — drag to reorder {cols === 3 ? '(3-col portrait)' : '(2-col landscape)'} · {isStack ? 'row flow' : 'masonry flow'}
       </p>
       <div ref={wrapperRef} style={{ width: '100%', overflow: 'hidden', position: 'relative', borderRadius: '8px', border: `1px solid ${border}` }}>
         <div
           ref={gridRef}
           style={{
             width: '1400px',
-            display: 'grid',
-            gridTemplateColumns: `repeat(${cols}, 1fr)`,
-            gap: '16px',
             padding: '16px',
             backgroundColor: '#0a0a0a',
+            ...(isStack
+              ? { display: 'grid', gridTemplateColumns: `repeat(${cols}, 1fr)`, gap: '20px' }
+              : { columns: cols, columnGap: '20px' }
+            ),
           }}
         >
           {imgs.map((img, idx) => {
@@ -382,7 +388,10 @@ function LayoutCanvas({ images, displayStyle, onSave }) {
                 }}
                 onDragEnd={() => { dragIndex.current = null; setDropTarget(null) }}
                 style={{
-                  gridColumn: `span ${effectiveSpan}`,
+                  ...(isStack
+                    ? { gridColumn: effectiveSpan === 2 ? 'span 2' : 'span 1' }
+                    : { breakInside: 'avoid', marginBottom: '20px', display: 'block', ...(effectiveSpan === 2 && { columnSpan: 'all' }) }
+                  ),
                   borderRadius: '8px',
                   overflow: 'hidden',
                   border: isDropTarget ? `2px solid ${accent}` : `2px solid ${border}`,

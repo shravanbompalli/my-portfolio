@@ -15,6 +15,7 @@ export default function ContactPage() {
   const [form, setForm] = useState({ name: '', email: '', message: '' })
   const [sending, setSending] = useState(false)
   const [sent, setSent] = useState(false)
+  const [formError, setFormError] = useState('')
 
   useEffect(() => {
     async function load() {
@@ -35,13 +36,16 @@ export default function ContactPage() {
   }, [])
 
   const handleSubmit = async () => {
-    if (!form.name || !form.email || !form.message) return
+    setFormError('')
+    const name = form.name.trim().slice(0, 100)
+    const email = form.email.trim().slice(0, 200)
+    const message = form.message.trim().slice(0, 2000)
+    if (!name || !email || !message) { setFormError('Please fill in all fields.'); return }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { setFormError('Please enter a valid email address.'); return }
     setSending(true)
-    try {
-      await supabase.from('contact_messages').insert([{ name: form.name, email: form.email, message: form.message }])
-      setSent(true)
-      setForm({ name: '', email: '', message: '' })
-    } catch (e) { console.error(e) }
+    const { error } = await supabase.from('contact_messages').insert([{ name, email, message }])
+    if (error) setFormError('Something went wrong. Please try again.')
+    else { setSent(true); setForm({ name: '', email: '', message: '' }) }
     setSending(false)
   }
 
@@ -338,6 +342,11 @@ export default function ContactPage() {
                   viewport={{ once: true, amount: 0.5 }}
                   transition={{ ...spring, delay: 0.16 }}
                 >
+                  {formError && (
+                    <p style={{ fontFamily: '"Geist",sans-serif', fontSize: '13px', color: '#ff4d00', margin: '0 0 12px' }}>
+                      {formError}
+                    </p>
+                  )}
                   <motion.button
                     whileHover={{ scale: 1.02, backgroundColor: '#ff6a2a' }}
                     whileTap={{ scale: 0.97 }}

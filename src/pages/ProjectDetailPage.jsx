@@ -210,7 +210,6 @@ function VideoItem({ url, embedUrl, aspectRatio, animation, delay }) {
       <video
         ref={videoRef}
         src={url}
-        muted
         loop
         playsInline
         style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
@@ -242,8 +241,17 @@ function VideoItem({ url, embedUrl, aspectRatio, animation, delay }) {
     </div>
   )
 
+  // Portrait videos (9:16, 3:4, etc.) cap height like a phone reel so they fit in one scroll.
+  // Landscape / square use the normal full-column-width sizing.
+  const PORTRAIT_RATIOS = new Set(['9/16', '2/3', '3/4', '4/5'])
+  const isPortraitVideo = PORTRAIT_RATIOS.has(ratio)
+
+  const containerStyle = isPortraitVideo
+    ? { maxHeight: 'clamp(480px, 65vh, 600px)', aspectRatio: ratio, width: 'auto', borderRadius: '16px', overflow: 'hidden', backgroundColor: '#111' }
+    : { width: '100%', ...(ratio !== 'auto' && { aspectRatio: ratio }), borderRadius: '16px', overflow: 'hidden', backgroundColor: '#111' }
+
   return (
-    <div style={{ width: '100%', ...(ratio !== 'auto' && { aspectRatio: ratio }), borderRadius: '16px', overflow: 'hidden', backgroundColor: '#111' }}>
+    <div style={containerStyle}>
       {embedSrc ? (
         mediaContent
       ) : animation === 'cinematic' ? (
@@ -746,33 +754,58 @@ export default function ProjectDetailPage() {
       </div>
 
       {/* ── Gallery Videos ── */}
-      {videos.length > 0 && (
-        <div style={{ maxWidth: '1400px', margin: '0 auto', padding: '0 clamp(16px, 5vw, 40px) 60px' }}>
-          <motion.h3
-            initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }} transition={spring}
-            style={{ fontFamily: '"Geist",sans-serif', fontSize: '13px', fontWeight: 500, color: '#aaa', margin: '0 0 24px', textTransform: 'uppercase', letterSpacing: '0.1em' }}
-          >Behind the Lens</motion.h3>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-            {videos.map((vid, i) => (
-              <motion.div key={i}
-                initial={{ opacity: 0, y: 50 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, amount: 0.1 }}
-                transition={{ ...spring, delay: 0.05 * i }}
-              >
-                <VideoItem
-                  url={vid.url}
-                  embedUrl={vid.embed_url}
-                  aspectRatio={vid.aspect_ratio || '16:9'}
-                  animation={animation}
-                  delay={0.1 * i}
-                />
-              </motion.div>
-            ))}
+      {videos.length > 0 && (() => {
+        // Group consecutive portrait videos side-by-side (max 4 per row), landscape solo
+        const PORTRAIT_VID = new Set(['9:16', '2:3', '3:4', '4:5', '9/16', '2/3', '3/4', '4/5'])
+        const groups = []
+        let vi = 0
+        while (vi < videos.length) {
+          const ar = videos[vi].aspect_ratio || '16:9'
+          if (PORTRAIT_VID.has(ar)) {
+            const row = []
+            while (vi < videos.length && PORTRAIT_VID.has(videos[vi].aspect_ratio || '16:9') && row.length < 4) {
+              row.push(videos[vi++])
+            }
+            groups.push({ portrait: true, items: row })
+          } else {
+            groups.push({ portrait: false, items: [videos[vi++]] })
+          }
+        }
+        return (
+          <div style={{ maxWidth: '1400px', margin: '0 auto', padding: '0 clamp(16px, 5vw, 40px) 60px' }}>
+            <motion.h3
+              initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }} transition={spring}
+              style={{ fontFamily: '"Geist",sans-serif', fontSize: '13px', fontWeight: 500, color: '#aaa', margin: '0 0 24px', textTransform: 'uppercase', letterSpacing: '0.1em' }}
+            >Behind the Lens</motion.h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+              {groups.map((group, g) => (
+                <motion.div key={g}
+                  initial={{ opacity: 0, y: 50 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, amount: 0.08 }}
+                  transition={{ ...spring, delay: 0.05 * g }}
+                  style={group.portrait
+                    ? { display: 'flex', gap: '16px', justifyContent: 'center', alignItems: 'flex-start' }
+                    : {}
+                  }
+                >
+                  {group.items.map((vid, j) => (
+                    <VideoItem
+                      key={j}
+                      url={vid.url}
+                      embedUrl={vid.embed_url}
+                      aspectRatio={vid.aspect_ratio || '16:9'}
+                      animation={animation}
+                      delay={0.08 * j}
+                    />
+                  ))}
+                </motion.div>
+              ))}
+            </div>
           </div>
-        </div>
-      )}
+        )
+      })()}
 
       {/* ── Gallery Images ── */}
       {gallery.length > 0 && (
@@ -816,13 +849,11 @@ export default function ProjectDetailPage() {
             <InfiniteGalleryStrip images={gallery} />
 
           ) : (
-            /* ── Parallax Grid (default) ── */
+            /* ── Parallax Grid (default) — CSS columns masonry ── */
             (() => {
               const cols = getGalleryCols(gallery)
-              // Portrait (3-col): uniform grid, no full-width hero
-              // Landscape (2-col): first image full-width, rest half-width
               return (
-                <div className="gallery-grid" style={{ display: 'grid', gridTemplateColumns: `repeat(${cols}, 1fr)`, gap: '20px' }}>
+                <div className="gallery-grid" style={{ columns: cols, columnGap: '20px' }}>
                   {gallery.map((img, i) => {
                     const url = typeof img === 'string' ? img : img?.url
                     const ar = typeof img === 'object' ? img?.aspect_ratio : '16:9'
@@ -835,7 +866,12 @@ export default function ProjectDetailPage() {
                         whileInView={{ opacity: 1, y: 0 }}
                         viewport={{ once: true, amount: 0.1 }}
                         transition={{ ...spring, delay: 0.06 * i }}
-                        style={{ gridColumn: spanFull ? 'span 2' : 'span 1' }}
+                        style={{
+                          breakInside: 'avoid',
+                          marginBottom: '20px',
+                          display: 'block',
+                          ...(spanFull && { columnSpan: 'all' }),
+                        }}
                       >
                         <ImageItem url={url} aspectRatio={ar} animation={animation} delay={0.08 * i} index={i} />
                       </motion.div>
@@ -895,8 +931,7 @@ export default function ProjectDetailPage() {
           .nav-contact, .nav-info { display: none !important; }
           .project-info-grid { flex-direction: column !important; gap: 32px !important; }
           .project-info-grid > div:last-child { flex: 1 1 100% !important; padding-top: 0 !important; }
-          .gallery-grid { grid-template-columns: 1fr !important; }
-          .gallery-grid > div { grid-column: span 1 !important; }
+          .gallery-grid { columns: 1 !important; }
         }
       `}</style>
     </div>
