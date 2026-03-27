@@ -103,6 +103,7 @@ export default function Services() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, amount: 0.1 }}
                 transition={{ ...revealSpring, delay: 0.05 * i }}
+                whileTap={{ scale: 0.98 }}
                 style={{ borderTop: '1px solid rgba(0,0,0,0.1)' }}
                 onMouseEnter={() => setHovered(i)}
                 onMouseLeave={() => setHovered(-1)}

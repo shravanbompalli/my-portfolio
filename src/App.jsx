@@ -25,13 +25,13 @@ import AdminPanel from './pages/AdminPanel'
 */
 
 /* The 5-block transition overlay */
-function TransitionCurtain({ phase }) {
+function TransitionCurtain({ phase, isMobile }) {
   // phase: 'idle' | 'covering' | 'covered' | 'revealing'
   const isActive = phase !== 'idle'
 
-  // Stagger: center block first, then outward
-  // Block order: [1, 2, 3, 4, 5] → delays: [120, 60, 0, 60, 120]
-  const staggerDelays = [200, 100, 0, 100, 200]
+  // Desktop: slow dramatic stagger. Mobile: fast, minimal stagger.
+  const staggerDelays = isMobile ? [100, 50, 0, 50, 100] : [200, 100, 0, 100, 200]
+  const blockDuration = isMobile ? '0.5s' : '0.8s'
 
   return (
     <div
@@ -63,7 +63,7 @@ function TransitionCurtain({ phase }) {
           if (phase === 'covering') {
             height = '100%'
             origin = 'bottom center'
-            transition = `height 0.8s cubic-bezier(0.7, 0, 0.3, 1) ${staggerDelays[i]}ms`
+            transition = `height ${blockDuration} cubic-bezier(0.7, 0, 0.3, 1) ${staggerDelays[i]}ms`
           } else if (phase === 'covered') {
             height = '100%'
             origin = 'top center'
@@ -71,7 +71,7 @@ function TransitionCurtain({ phase }) {
           } else if (phase === 'revealing') {
             height = '0%'
             origin = 'top center'
-            transition = `height 0.8s cubic-bezier(0.7, 0, 0.3, 1) ${staggerDelays[i]}ms`
+            transition = `height ${blockDuration} cubic-bezier(0.7, 0, 0.3, 1) ${staggerDelays[i]}ms`
           }
 
           return (
@@ -125,6 +125,7 @@ function PageTransitions() {
   const [phase, setPhase] = useState('idle')
   const prevPath = useRef(location.pathname)
   const timeoutRefs = useRef([])
+  const isMobile = typeof window !== 'undefined' && window.matchMedia('(max-width: 809px)').matches
 
   // Clean up timeouts on unmount
   const clearAllTimeouts = () => {
@@ -147,22 +148,24 @@ function PageTransitions() {
     setPhase('covering')
 
     // Phase 2: After blocks fully cover, swap the route
+    // Mobile: 600ms cover. Desktop: 1000ms cover.
     addTimeout(() => {
       setPhase('covered')
       prevPath.current = displayLocation.pathname
       setDisplayLocation(location)
       document.documentElement.scrollTop = 0
 
-              // Phase 3: Small pause while covered, then reveal
+      // Phase 3: Small pause while covered, then reveal
       addTimeout(() => {
         setPhase('revealing')
 
         // Phase 4: After reveal completes, go idle
+        // Mobile: 700ms reveal total. Desktop: 1100ms.
         addTimeout(() => {
           setPhase('idle')
-        }, 1100) // reveal duration + stagger
-      }, 300) // brief hold while covered
-    }, 1000) // cover duration + stagger
+        }, isMobile ? 700 : 1100)
+      }, isMobile ? 150 : 300) // brief hold while covered
+    }, isMobile ? 600 : 1000) // cover duration + stagger
 
     return clearAllTimeouts
   }, [location])
@@ -188,7 +191,7 @@ function PageTransitions() {
       }} />
 
       {/* 5-block curtain overlay */}
-      <TransitionCurtain phase={phase} />
+      <TransitionCurtain phase={phase} isMobile={isMobile} />
 
       {/* Page content — subtle fade for extra smoothness */}
       <div style={{

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { motion, useScroll, useTransform } from 'framer-motion'
 import { supabase } from '../lib/supabase'
@@ -299,6 +299,71 @@ function ImageItem({ url, aspectRatio, animation, delay, index }) {
   )
 }
 
+/* ── Mobile Swipe Carousel — replaces parallax/stack grid on touch devices ── */
+function MobileSwipeCarousel({ images, animation }) {
+  const [current, setCurrent] = useState(0)
+  const total = images.length
+
+  function handleDragEnd(_, info) {
+    if (info.offset.x < -40 && current < total - 1) setCurrent(c => c + 1)
+    else if (info.offset.x > 40 && current > 0) setCurrent(c => c - 1)
+  }
+
+  const img = images[current]
+  const url = typeof img === 'string' ? img : img?.url
+  const ar = typeof img === 'object' ? img?.aspect_ratio : '16:9'
+
+  return (
+    <div style={{ position: 'relative', userSelect: 'none' }}>
+      <motion.div
+        key={current}
+        drag="x"
+        dragConstraints={{ left: 0, right: 0 }}
+        dragElastic={0.15}
+        onDragEnd={handleDragEnd}
+        initial={{ opacity: 0, x: 30 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+        style={{ touchAction: 'pan-y', cursor: 'grab' }}
+      >
+        <ImageItem url={url} aspectRatio={ar} animation={animation} delay={0} index={current} />
+      </motion.div>
+
+      {/* Dot indicators */}
+      {total > 1 && (
+        <div style={{ display: 'flex', justifyContent: 'center', gap: '6px', marginTop: '12px' }}>
+          {images.map((_, i) => (
+            <button
+              key={i}
+              onClick={() => setCurrent(i)}
+              style={{
+                width: i === current ? '20px' : '6px',
+                height: '6px',
+                borderRadius: '3px',
+                backgroundColor: i === current ? '#ff4d00' : '#ccc',
+                border: 'none', padding: 0, cursor: 'pointer',
+                transition: 'all 0.3s ease',
+              }}
+            />
+          ))}
+        </div>
+      )}
+
+      {/* Counter */}
+      {total > 1 && (
+        <div style={{
+          position: 'absolute', top: '12px', right: '12px',
+          fontFamily: '"Geist Mono",monospace', fontSize: '11px', fontWeight: 500,
+          color: '#fff', backgroundColor: 'rgba(0,0,0,0.5)',
+          padding: '4px 10px', borderRadius: '20px', letterSpacing: '0.05em',
+        }}>
+          {current + 1} / {total}
+        </div>
+      )}
+    </div>
+  )
+}
+
 /* ── Stack Gallery — adaptive layout based on aspect ratio ── */
 function StackGallery({ images, animation }) {
   const cols = getGalleryCols(images)
@@ -589,6 +654,7 @@ export default function ProjectDetailPage() {
   const [contact, setContact] = useState(null)
   const [headingAnim, setHeadingAnim] = useState('blur')
   const coverRef = useRef()
+  const isMobile = typeof window !== 'undefined' && window.matchMedia('(max-width: 809px)').matches
 
   useEffect(() => {
     async function load() {
@@ -842,16 +908,20 @@ export default function ProjectDetailPage() {
             </motion.div>
 
           ) : project.image_display_style === 'stack' ? (
-            /* ── Stack: alternating full-width and 2-col rows ── */
-            <StackGallery images={gallery} animation={animation} />
+            /* ── Stack: swipe carousel on mobile, alternating rows on desktop ── */
+            isMobile
+              ? <MobileSwipeCarousel images={gallery} animation={animation} />
+              : <StackGallery images={gallery} animation={animation} />
 
           ) : project.image_display_style === 'infinite' ? (
             /* ── Infinite: auto-scrolling horizontal strip ── */
             <InfiniteGalleryStrip images={gallery} />
 
           ) : (
-            /* ── Parallax Grid (default) — CSS columns masonry ── */
-            (() => {
+            /* ── Parallax Grid (default) — swipe carousel on mobile, CSS columns on desktop ── */
+            isMobile ? (
+              <MobileSwipeCarousel images={gallery} animation={animation} />
+            ) : (() => {
               const cols = getGalleryCols(gallery)
               return (
                 <div className="gallery-grid" style={{ columns: cols, columnGap: '20px' }}>

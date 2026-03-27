@@ -99,6 +99,7 @@ export default function Portfolio({ homepageOnly }) {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, amount: 0.1 }}
               transition={{ ...spring, delay: 0.1 * i }}
+              whileTap={{ scale: 0.97 }}
               onMouseEnter={() => setHov(i)}
               onMouseLeave={() => setHov(null)}
               style={{

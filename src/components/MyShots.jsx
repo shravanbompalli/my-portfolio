@@ -76,6 +76,7 @@ function MagneticCard({ children, i, isMobile }) {
           delay: 0.06 * (i % 6),
         }
       }
+      whileTap={isMobile ? { scale: 0.97 } : {}}
       onMouseMove={handleMouse}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={handleLeave}
