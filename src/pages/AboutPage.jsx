@@ -215,9 +215,15 @@ export default function AboutPage() {
           }
           .about-hero-photo {
             width: 100% !important;
-            height: 60vw !important;
-            aspect-ratio: unset !important;
+            height: auto !important;
+            aspect-ratio: 3/4 !important;
             flex-shrink: 0 !important;
+          }
+        }
+        @media (min-width: 810px) and (max-width: 1279px) {
+          .about-hero-photo {
+            height: min(60vh, 500px) !important;
+            width: auto !important;
           }
         }
       `}</style>
