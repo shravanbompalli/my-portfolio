@@ -71,8 +71,8 @@ function MagneticCard({ children, i, isMobile }) {
           overflow: 'hidden',
           position: 'relative',
           boxShadow: isHovered
-            ? '0 25px 60px rgba(0,0,0,0.25), 0 0 40px rgba(255,77,0,0.10)'
-            : '0 4px 20px rgba(0,0,0,0.10)',
+            ? '0 25px 60px rgba(0,0,0,0.2), 0 0 40px rgba(255,77,0,0.08)'
+            : '0 4px 20px rgba(0,0,0,0.06)',
           transition: 'box-shadow 0.4s ease',
           transformStyle: 'preserve-3d',
         }}
@@ -91,6 +91,7 @@ function MagneticCard({ children, i, isMobile }) {
 /* ── VideoCard — lazy load + hover play + lightbox trigger ── */
 function VideoCard({ video, i, isMobile, onOpen }) {
   const videoRef = useRef(null)
+  const tryPlayRef = useRef(null)
   const [isPlaying, setIsPlaying] = useState(false)
   const [progress, setProgress] = useState(0)
   const thumb = getThumb(video.video_url, video.thumb_url)
@@ -119,6 +120,7 @@ function VideoCard({ video, i, isMobile, onOpen }) {
     const tryPlay = () => {
       el.play().then(() => setIsPlaying(true)).catch(() => {})
     }
+    tryPlayRef.current = tryPlay
     if (el.readyState >= 3) {
       tryPlay()
     } else {
@@ -129,6 +131,10 @@ function VideoCard({ video, i, isMobile, onOpen }) {
   function handleMouseLeave() {
     const el = videoRef.current
     if (!el) return
+    if (tryPlayRef.current) {
+      el.removeEventListener('canplay', tryPlayRef.current)
+      tryPlayRef.current = null
+    }
     el.pause()
     el.currentTime = 0
     setIsPlaying(false)
@@ -276,6 +282,11 @@ function VideoLightbox({ video, onClose }) {
     return () => window.removeEventListener('keydown', handler)
   }, [onClose])
 
+  useEffect(() => {
+    document.body.style.overflow = 'hidden'
+    return () => { document.body.style.overflow = '' }
+  }, [])
+
   function handleTimeUpdate() {
     const el = videoRef.current
     if (!el || !el.duration) return
@@ -358,6 +369,7 @@ function VideoLightbox({ video, onClose }) {
 
       <button
         onClick={onClose}
+        aria-label="Close"
         style={{ position: 'absolute', top: '20px', right: '20px', width: '40px', height: '40px', background: 'rgba(255,255,255,0.08)', border: 'none', borderRadius: '50%', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
       >
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#aaa" strokeWidth="2" strokeLinecap="round">
