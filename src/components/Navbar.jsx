@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { supabase } from '../lib/supabase'
 
@@ -14,13 +15,14 @@ import { supabase } from '../lib/supabase'
 const leftPanelVariants = {
   initial: { x: '-100%' },
   animate: { x: 0, transition: { type: 'spring', stiffness: 60, damping: 18, mass: 1 } },
-  exit:    { x: '-100%', transition: { type: 'spring', stiffness: 60, damping: 18, mass: 1 } },
+  // Fast ease-in exit — curtain covers the screen anyway, no need for slow spring
+  exit:    { x: '-100%', transition: { duration: 0.22, ease: [0.7, 0, 1, 1] } },
 }
 
 const rightPanelVariants = {
   initial: { x: '100%' },
   animate: { x: 0, transition: { type: 'spring', stiffness: 60, damping: 18, mass: 1 } },
-  exit:    { x: '100%', transition: { type: 'spring', stiffness: 60, damping: 18, mass: 1 } },
+  exit:    { x: '100%', transition: { duration: 0.22, ease: [0.7, 0, 1, 1] } },
 }
 
 const linkContainerVariants = {
@@ -36,6 +38,14 @@ export default function Navbar() {
   const [contact, setContact] = useState(null)
   const [social, setSocial] = useState(null)
   const [menuOpen, setMenuOpen] = useState(false)
+  const navigate = useNavigate()
+
+  function handleNavClick(href) {
+    // Navigate first so the page curtain starts, then close menu.
+    // Fast exit animation (0.22s) is done well before curtain fully covers.
+    navigate(href)
+    setMenuOpen(false)
+  }
 
   useEffect(() => {
     async function load() {
@@ -102,13 +112,13 @@ export default function Navbar() {
       <AnimatePresence>
         {menuOpen && (
           <React.Fragment key="mobile-menu">
-            {/* Backdrop */}
+            {/* Backdrop — no backdropFilter, too GPU-heavy during animation on mobile */}
             <motion.div
               className="fixed inset-0 z-[100]"
-              style={{ backgroundColor: 'rgba(0,0,0,0.97)', backdropFilter: 'blur(12px)' }}
+              style={{ backgroundColor: 'rgba(0,0,0,0.97)' }}
               initial={{ opacity: 0 }}
-              animate={{ opacity: 1, transition: { duration: 0.25 } }}
-              exit={{ opacity: 0, transition: { duration: 0.25 } }}
+              animate={{ opacity: 1, transition: { duration: 0.2 } }}
+              exit={{ opacity: 0, transition: { duration: 0.15 } }}
             />
 
             {/* Two panels — flex row, fill screen */}
@@ -143,25 +153,29 @@ export default function Navbar() {
                     { label: 'About',     href: '/about'     },
                     { label: 'Contact',   href: '/contact'   },
                   ].map(link => (
-                    <motion.a
+                    <motion.button
                       key={link.label}
-                      href={link.href}
-                      onClick={() => setMenuOpen(false)}
+                      onClick={() => handleNavClick(link.href)}
                       variants={linkItemVariants}
                       style={{
                         fontFamily: '"Geist", sans-serif',
                         fontSize: 'clamp(22px,5.5vw,32px)',
                         fontWeight: 500,
                         color: '#fff',
+                        background: 'none',
+                        border: 'none',
+                        borderBottom: '1px solid rgba(255,255,255,0.06)',
                         textDecoration: 'none',
                         letterSpacing: '-0.02em',
                         padding: '8px 0',
-                        borderBottom: '1px solid rgba(255,255,255,0.06)',
                         display: 'block',
+                        width: '100%',
+                        textAlign: 'left',
+                        cursor: 'pointer',
                       }}
                     >
                       {link.label}
-                    </motion.a>
+                    </motion.button>
                   ))}
                 </motion.div>
               </motion.div>
