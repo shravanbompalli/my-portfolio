@@ -1047,7 +1047,7 @@ export default function AdminPanel() {
                   <select
                     value={p.service_category || ''}
                     onChange={e => { const u = [...projects]; u[i] = { ...u[i], service_category: e.target.value || null }; setProjects(u) }}
-                    style={{ width: '100%', fontFamily: '"Geist",sans-serif', fontSize: '13px', color: white, backgroundColor: '#0d0d0d', border: `1px solid ${border}`, borderRadius: '8px', padding: '10px 14px', outline: 'none' }}
+                    style={{ width: '100%', fontFamily: '"Geist",sans-serif', fontSize: '13px', color: white, backgroundColor: '#0d0d0d', border: `1px solid ${border}`, borderRadius: '6px', padding: '8px', outline: 'none' }}
                     onFocus={e => e.target.style.borderColor = accent}
                     onBlur={e => e.target.style.borderColor = border}
                   >
