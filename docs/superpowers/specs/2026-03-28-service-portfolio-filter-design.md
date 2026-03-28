@@ -56,11 +56,11 @@ No RLS changes needed — these columns inherit existing table policies.
 ### 1. `Services.jsx` — additive only, no layout changes
 
 **Desktop (≥810px):**
-- Floating mouse-follow image: stays `pointerEvents: none` — decorative only, no change
-- Inside expanded accordion (`isActive`), after the description + tags, add a small "View [ServiceName] Work →" text link
-- Only rendered if `s.filter_key` is set
-- Uses `useNavigate` from react-router-dom
-- Styled identically to existing tag pill row — inline, no new layout
+- Floating mouse-follow image: stays `pointerEvents: none` by default — decorative only
+- Inside expanded accordion (`isActive`), the expanded content row gets `justify-content: space-between` so the description+tags sit on the left and a "View Projects →" button sits on the **right side**, vertically centered
+- Button: pill style (`background: #000`, `color: #fff`, `borderRadius: 40px`, `padding: 12px 24px`), hover → `background: #ff4d00`
+- Only rendered if `s.filter_key` is set; uses `useNavigate`
+- **Floating image suppression:** add a `buttonHovered` boolean state. When the mouse enters the "View Projects →" button, set `buttonHovered = true` and set `pointerEvents: none` on the button itself is not needed — instead, suppress the floating image by treating `buttonHovered` as an override: `opacity: (hovered !== -1 && !buttonHovered) ? 1 : 0`. This makes the floating image disappear while the cursor is over the button, so it never obscures the click target. On mouse leave of the button, `buttonHovered = false`.
 
 **Mobile (≤809px):**
 - Add a visible static image block inside the expanded accordion (after description/tags)
