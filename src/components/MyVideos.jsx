@@ -409,9 +409,8 @@ export default function MyVideos({ limit, title = 'Frames', subtitle }) {
   }
 
   const shown = limit ? videos.slice(0, limit) : videos
-  const hasMore = limit && videos.length > limit
 
-  return <VideosSection videos={shown} limit={limit} title={title} subtitle={subtitle} hasMore={hasMore} />
+  return <VideosSection videos={shown} limit={limit} title={title} subtitle={subtitle} hasMore={!!limit} />
 }
 
 function VideosSection({ videos, title, subtitle, hasMore }) {

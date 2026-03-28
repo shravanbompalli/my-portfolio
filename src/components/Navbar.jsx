@@ -150,6 +150,7 @@ export default function Navbar() {
                     { label: 'Home',      href: '/'          },
                     { label: 'Portfolio', href: '/portfolio'  },
                     { label: 'My Shots',  href: '/my-shots'  },
+                    { label: 'Frames',    href: '/frames'    },
                     { label: 'About',     href: '/about'     },
                     { label: 'Contact',   href: '/contact'   },
                   ].map(link => (

@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence, useMotionValue, useSpring } from 'framer-motion'
 import { supabase } from '../lib/supabase'
 
@@ -9,6 +10,8 @@ export default function Services() {
   const [active, setActive] = useState(-1)
   const [hovered, setHovered] = useState(-1)
   const containerRef = useRef(null)
+  const navigate = useNavigate()
+  const [buttonHovered, setButtonHovered] = useState(false)
 
   // Smooth spring-animated mouse position
   const mouseX = useMotionValue(0)
@@ -167,40 +170,106 @@ export default function Services() {
                       style={{ overflow: 'hidden' }}
                     >
                       <div style={{
-                        display: 'flex', flexDirection: 'column', gap: '16px',
+                        display: 'flex', alignItems: 'flex-start',
+                        justifyContent: 'space-between', gap: '24px',
                         paddingBottom: '28px', paddingLeft: 'clamp(56px, 9vw, 112px)',
                       }}>
-                        <motion.p
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: 0.1, duration: 0.3 }}
-                          style={{
-                            fontFamily: '"Geist", sans-serif',
-                            fontSize: 'clamp(14px, 1.3vw, 16px)',
-                            fontWeight: 400, color: '#404040',
-                            lineHeight: 1.6, maxWidth: '540px', margin: 0,
-                          }}
-                        >
-                          {s.description}
-                        </motion.p>
-                        {s.tags && s.tags.length > 0 && (
-                          <motion.div
+                        {/* Left: description + tags */}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', flex: 1 }}>
+                          <motion.p
                             initial={{ opacity: 0, y: 10 }}
                             animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: 0.15, duration: 0.3 }}
-                            style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}
+                            transition={{ delay: 0.1, duration: 0.3 }}
+                            style={{
+                              fontFamily: '"Geist", sans-serif',
+                              fontSize: 'clamp(14px, 1.3vw, 16px)',
+                              fontWeight: 400, color: '#404040',
+                              lineHeight: 1.6, maxWidth: '540px', margin: 0,
+                            }}
                           >
-                            {s.tags.map(tag => (
-                              <span key={tag} style={{
-                                fontFamily: '"Geist", sans-serif',
-                                fontSize: '13px', fontWeight: 400,
-                                color: '#fff', backgroundColor: '#000',
-                                padding: '6px 14px', borderRadius: '40px',
+                            {s.description}
+                          </motion.p>
+                          {s.tags && s.tags.length > 0 && (
+                            <motion.div
+                              initial={{ opacity: 0, y: 10 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              transition={{ delay: 0.15, duration: 0.3 }}
+                              style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}
+                            >
+                              {s.tags.map(tag => (
+                                <span key={tag} style={{
+                                  fontFamily: '"Geist", sans-serif',
+                                  fontSize: '13px', fontWeight: 400,
+                                  color: '#fff', backgroundColor: '#000',
+                                  padding: '6px 14px', borderRadius: '40px',
+                                }}>
+                                  {tag}
+                                </span>
+                              ))}
+                            </motion.div>
+                          )}
+                          {/* Mobile-only tappable image */}
+                          {s.filter_key && s.image_url && (
+                            <motion.div
+                              className="services-mobile-image"
+                              initial={{ opacity: 0, y: 10 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              transition={{ delay: 0.2, duration: 0.3 }}
+                              onClick={() => navigate(`/portfolio?category=${encodeURIComponent(s.filter_key)}`)}
+                              style={{
+                                position: 'relative', borderRadius: '8px', overflow: 'hidden',
+                                height: '200px', cursor: 'pointer',
+                              }}
+                            >
+                              <img
+                                src={s.image_url}
+                                alt={s.title}
+                                style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', filter: 'saturate(1.4)' }}
+                              />
+                              <div style={{
+                                position: 'absolute', inset: 0,
+                                background: 'linear-gradient(transparent 50%, rgba(0,0,0,0.6) 100%)',
+                                pointerEvents: 'none',
+                              }} />
+                              <span style={{
+                                position: 'absolute', bottom: '12px', left: '14px',
+                                fontFamily: '"Geist", sans-serif', fontSize: '13px', fontWeight: 500,
+                                color: '#fff', display: 'flex', alignItems: 'center', gap: '6px',
                               }}>
-                                {tag}
+                                View Projects
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                                  <path d="M5 12h14"/><path d="M12 5l7 7-7 7"/>
+                                </svg>
                               </span>
-                            ))}
-                          </motion.div>
+                            </motion.div>
+                          )}
+                        </div>
+
+                        {/* Right: View Projects button — desktop only */}
+                        {s.filter_key && (
+                          <motion.button
+                            className="services-view-projects-btn"
+                            initial={{ opacity: 0, x: 10 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: 0.2, duration: 0.3 }}
+                            onClick={e => { e.stopPropagation(); navigate(`/portfolio?category=${encodeURIComponent(s.filter_key)}`) }}
+                            onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#ff4d00'; setButtonHovered(true) }}
+                            onMouseLeave={e => { e.currentTarget.style.backgroundColor = '#000'; setButtonHovered(false) }}
+                            style={{
+                              flexShrink: 0, alignSelf: 'center',
+                              fontFamily: '"Geist", sans-serif', fontSize: '14px', fontWeight: 500,
+                              color: '#fff', backgroundColor: '#000',
+                              padding: '12px 24px', borderRadius: '40px', border: 'none',
+                              cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px',
+                              transition: 'background-color 0.3s ease',
+                              whiteSpace: 'nowrap',
+                            }}
+                          >
+                            View Projects
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                              <path d="M5 12h14"/><path d="M12 5l7 7-7 7"/>
+                            </svg>
+                          </motion.button>
                         )}
                       </div>
                     </motion.div>
@@ -227,7 +296,7 @@ export default function Services() {
               pointerEvents: 'none',
               zIndex: 10,
               boxShadow: '0 20px 60px rgba(0,0,0,0.15)',
-              opacity: hovered !== -1 ? 1 : 0,
+              opacity: hovered !== -1 && !buttonHovered ? 1 : 0,
               scale: hovered !== -1 ? 1 : 0.7,
               transition: 'opacity 0.4s cubic-bezier(0.16,1,0.3,1), scale 0.4s cubic-bezier(0.16,1,0.3,1)',
             }}
@@ -278,8 +347,11 @@ export default function Services() {
       </div>
       <style>{`
         .services-floating-image { display: block; }
+        .services-mobile-image { display: none; }
         @media (max-width: 809px) {
           .services-floating-image { display: none !important; }
+          .services-view-projects-btn { display: none !important; }
+          .services-mobile-image { display: block !important; }
         }
       `}</style>
     </section>

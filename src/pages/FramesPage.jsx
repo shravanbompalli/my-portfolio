@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { supabase } from '../lib/supabase'
@@ -10,6 +10,7 @@ export default function FramesPage() {
   const [brand, setBrand] = useState(null)
   const [contact, setContact] = useState(null)
   const [frames, setFrames] = useState(null)
+  const heroVideoRef = useRef(null)
 
   useEffect(() => {
     async function load() {
@@ -28,6 +29,12 @@ export default function FramesPage() {
     load()
     window.scrollTo(0, 0)
   }, [])
+
+  useEffect(() => {
+    if (heroVideoRef.current) {
+      heroVideoRef.current.play().catch(() => {})
+    }
+  }, [frames])
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#f5f5f5' }}>
@@ -60,6 +67,7 @@ export default function FramesPage() {
       <section style={{ position: 'relative', height: '100dvh', overflow: 'hidden', backgroundColor: '#000' }}>
         {frames?.hero_video ? (
           <video
+            ref={heroVideoRef}
             autoPlay
             muted
             loop

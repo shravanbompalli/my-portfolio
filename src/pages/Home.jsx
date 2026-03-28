@@ -253,6 +253,7 @@ export default function Home() {
               <NavLink to="/portfolio" label="PORTFOLIO" />
               <NavLink to="/about" label="ABOUT ME" />
               <NavLink to="/my-shots" label="MY SHOTS" />
+              <NavLink to="/frames" label="FRAMES" />
               <NavLink to="/contact" label="CONTACT" />
             </nav>
           </div>

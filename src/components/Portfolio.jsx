@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { supabase } from '../lib/supabase'
 
@@ -7,9 +7,15 @@ const spring = { type: 'spring', stiffness: 70, damping: 12, mass: 0.8 }
 
 export default function Portfolio({ homepageOnly }) {
   const [projects, setProjects] = useState([])
+  const [loading, setLoading] = useState(true)
   const [hov, setHov] = useState(null)
+  const [searchParams] = useSearchParams()
+  const categoryFilter = searchParams.get('category')
+  const navigate = useNavigate()
+  const [filterLabel, setFilterLabel] = useState('')
 
   useEffect(() => {
+    setLoading(true)
     async function load() {
       let query = supabase
         .from('projects')
@@ -17,13 +23,47 @@ export default function Portfolio({ homepageOnly }) {
         .eq('is_active', true)
         .order('sort_order')
       if (homepageOnly) query = query.eq('show_on_homepage', true)
+      if (categoryFilter && !homepageOnly) query = query.eq('service_category', categoryFilter)
       const { data } = await query
       if (data) setProjects(data)
+      setLoading(false)
+
+      if (categoryFilter && !homepageOnly) {
+        const { data: svc } = await supabase
+          .from('services')
+          .select('title')
+          .eq('filter_key', categoryFilter)
+          .single()
+        setFilterLabel(svc?.title || categoryFilter)
+      } else {
+        setFilterLabel('')
+      }
     }
     load()
-  }, [homepageOnly])
+  }, [homepageOnly, categoryFilter])
 
-  if (!projects.length) return null
+  if (!loading && !projects.length) {
+    if (categoryFilter && !homepageOnly) {
+      return (
+        <section id="portfolio" style={{ backgroundColor: '#f5f5f5', padding: 'clamp(60px, 8vw, 100px) clamp(18px, 4vw, 40px)' }}>
+          <div style={{ maxWidth: '1400px', margin: '0 auto', textAlign: 'center', paddingTop: '40px' }}>
+            <p style={{ fontFamily: '"Geist", sans-serif', fontSize: '18px', color: '#aaa' }}>
+              No projects found for "{filterLabel || categoryFilter}".
+            </p>
+            <button
+              onClick={() => { window.location.href = '/portfolio' }}
+              style={{
+                marginTop: '16px', fontFamily: '"Geist", sans-serif', fontSize: '15px',
+                fontWeight: 500, color: '#fff', backgroundColor: '#000',
+                padding: '12px 24px', borderRadius: '40px', border: 'none', cursor: 'pointer',
+              }}
+            >View All Work</button>
+          </div>
+        </section>
+      )
+    }
+    return null
+  }
 
   const shown = projects
   const hasMore = homepageOnly
@@ -84,6 +124,35 @@ export default function Portfolio({ homepageOnly }) {
             </Link>
           )}
         </motion.div>
+
+        {categoryFilter && !homepageOnly && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={spring}
+            style={{ marginBottom: 'clamp(20px, 3vw, 32px)' }}
+          >
+            <span style={{
+              fontFamily: '"Geist", sans-serif', fontSize: '14px', fontWeight: 400,
+              color: '#000', backgroundColor: '#eee',
+              padding: '8px 16px', borderRadius: '40px',
+              display: 'inline-flex', alignItems: 'center', gap: '8px',
+            }}>
+              {filterLabel || categoryFilter}
+              <button
+                onClick={() => navigate('/portfolio')}
+                style={{
+                  background: 'none', border: 'none', cursor: 'pointer',
+                  color: '#404040', fontSize: '16px', lineHeight: 1,
+                  padding: '0 2px', fontFamily: '"Geist", sans-serif',
+                }}
+                onMouseEnter={e => e.currentTarget.style.color = '#000'}
+                onMouseLeave={e => e.currentTarget.style.color = '#404040'}
+                aria-label="Clear filter"
+              >×</button>
+            </span>
+          </motion.div>
+        )}
 
         <div
           className="portfolio-grid"
