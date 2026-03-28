@@ -98,7 +98,7 @@ export default function ContactPage() {
             <img
               src={contact.contact_image}
               alt=""
-              style={{ width: '100%', height: '100%', display: 'block', objectFit: 'cover', objectPosition: 'top' }}
+              style={{ width: '100%', height: '100%', display: 'block', objectFit: 'cover', objectPosition: 'center' }}
             />
           ) : (
             <div style={{ width: '100%', height: '100%', background: 'linear-gradient(135deg, #ddd, #ccc)' }} />
@@ -390,7 +390,7 @@ export default function ContactPage() {
           }
           .contact-hero-photo {
             width: 100% !important;
-            height: 56vw !important;
+            height: 55vh !important;
             aspect-ratio: unset !important;
             flex-shrink: 0 !important;
           }
