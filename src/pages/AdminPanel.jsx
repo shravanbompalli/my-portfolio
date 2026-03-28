@@ -1042,6 +1042,21 @@ export default function AdminPanel() {
                 <Input label="Title" value={p.title} onChange={v => { const u = [...projects]; u[i].title = v; setProjects(u) }} />
                 <Input label="Slug (URL)" value={p.slug} onChange={v => { const u = [...projects]; u[i].slug = v; setProjects(u) }} placeholder="my-project-name" />
                 <Input label="Category" value={p.category} onChange={v => { const u = [...projects]; u[i].category = v; setProjects(u) }} />
+                <div>
+                  <p style={{ fontFamily: '"Geist",sans-serif', fontSize: '11px', color: gray, margin: '0 0 6px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Service Category</p>
+                  <select
+                    value={p.service_category || ''}
+                    onChange={e => { const u = [...projects]; u[i] = { ...u[i], service_category: e.target.value || null }; setProjects(u) }}
+                    style={{ width: '100%', fontFamily: '"Geist",sans-serif', fontSize: '13px', color: white, backgroundColor: '#0d0d0d', border: `1px solid ${border}`, borderRadius: '8px', padding: '10px 14px', outline: 'none' }}
+                    onFocus={e => e.target.style.borderColor = accent}
+                    onBlur={e => e.target.style.borderColor = border}
+                  >
+                    <option value="">— None —</option>
+                    {services.filter(s => s.filter_key).map(s => (
+                      <option key={s.id} value={s.filter_key}>{s.filter_key} — {s.title}</option>
+                    ))}
+                  </select>
+                </div>
                 <Input label="Client" value={p.client} onChange={v => { const u = [...projects]; u[i].client = v; setProjects(u) }} />
                 <Input label="Location" value={p.location} onChange={v => { const u = [...projects]; u[i].location = v; setProjects(u) }} />
               </div>
