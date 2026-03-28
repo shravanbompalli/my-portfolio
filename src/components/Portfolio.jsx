@@ -45,7 +45,7 @@ export default function Portfolio({ homepageOnly }) {
         <section id="portfolio" style={{ backgroundColor: '#f5f5f5', padding: 'clamp(60px, 8vw, 100px) clamp(18px, 4vw, 40px)' }}>
           <div style={{ maxWidth: '1400px', margin: '0 auto', textAlign: 'center', paddingTop: '40px' }}>
             <p style={{ fontFamily: '"Geist", sans-serif', fontSize: '18px', color: '#aaa' }}>
-              No projects found for this category.
+              No projects found for "{filterLabel || categoryFilter}".
             </p>
             <button
               onClick={() => navigate('/portfolio')}
@@ -123,7 +123,12 @@ export default function Portfolio({ homepageOnly }) {
         </motion.div>
 
         {categoryFilter && !homepageOnly && (
-          <div style={{ marginBottom: 'clamp(20px, 3vw, 32px)' }}>
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={spring}
+            style={{ marginBottom: 'clamp(20px, 3vw, 32px)' }}
+          >
             <span style={{
               fontFamily: '"Geist", sans-serif', fontSize: '14px', fontWeight: 400,
               color: '#000', backgroundColor: '#eee',
@@ -143,7 +148,7 @@ export default function Portfolio({ homepageOnly }) {
                 aria-label="Clear filter"
               >×</button>
             </span>
-          </div>
+          </motion.div>
         )}
 
         <div
