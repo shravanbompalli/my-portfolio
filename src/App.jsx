@@ -10,6 +10,7 @@ import PortfolioPage from './pages/PortfolioPage'
 import ProjectDetailPage from './pages/ProjectDetailPage'
 import AboutPage from './pages/AboutPage'
 import MyShotsPage from './pages/MyShotsPage'
+import FramesPage from './pages/FramesPage'
 import ContactPage from './pages/ContactPage'
 import AdminPanel from './pages/AdminPanel'
 
@@ -204,6 +205,7 @@ function PageTransitions() {
           <Route path="/portfolio" element={<PortfolioPage />} />
           <Route path="/about" element={<AboutPage />} />
           <Route path="/my-shots" element={<MyShotsPage />} />
+          <Route path="/frames" element={<FramesPage />} />
           <Route path="/contact" element={<ContactPage />} />
           <Route path="/admin" element={<AdminPanel />} />
         </Routes>
