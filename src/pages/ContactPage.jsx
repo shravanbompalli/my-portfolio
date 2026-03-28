@@ -384,7 +384,8 @@ export default function ContactPage() {
           .contact-hero {
             flex-direction: column !important;
             height: auto !important;
-            min-height: 100dvh !important;
+            min-height: 0 !important;
+            padding-bottom: clamp(40px, 8vw, 60px) !important;
           }
           .contact-hero-photo {
             width: 100% !important;
