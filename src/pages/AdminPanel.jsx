@@ -999,9 +999,15 @@ export default function AdminPanel() {
         <Section title="🎬 Services" badge={services.length}>
           {services.map((s, i) => (
             <div key={s.id} style={{ backgroundColor: '#0d0d0d', borderRadius: '12px', padding: '14px', marginBottom: '12px', border: `1px solid ${border}` }}>
-              <div style={{ display: 'grid', gridTemplateColumns: '60px 1fr', gap: '10px', marginBottom: '10px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '60px 1fr 1fr', gap: '10px', marginBottom: '10px' }}>
                 <Input label="No." value={s.number} onChange={v => { const u = [...services]; u[i].number = parseInt(v) || 0; setServices(u) }} />
                 <Input label="Title" value={s.title} onChange={v => { const u = [...services]; u[i].title = v; setServices(u) }} />
+                <Input
+                  label="Filter Key"
+                  value={s.filter_key || ''}
+                  placeholder="e.g. weddings"
+                  onChange={v => { const u = [...services]; u[i].filter_key = v.toLowerCase().replace(/\s+/g, '-'); setServices(u) }}
+                />
               </div>
               <Input label="Description" value={s.description} onChange={v => { const u = [...services]; u[i].description = v; setServices(u) }} multiline />
               <div style={{ marginTop: '10px' }}><Input label="Tags (comma)" value={s.tags?.join(', ')} onChange={v => { const u = [...services]; u[i].tags = v.split(',').map(t => t.trim()).filter(Boolean); setServices(u) }} /></div>
