@@ -51,7 +51,7 @@ export default function Portfolio({ homepageOnly }) {
               No projects found for "{filterLabel || categoryFilter}".
             </p>
             <button
-              onClick={() => { setLoading(true); navigate('/portfolio') }}
+              onClick={() => { window.location.href = '/portfolio' }}
               style={{
                 marginTop: '16px', fontFamily: '"Geist", sans-serif', fontSize: '15px',
                 fontWeight: 500, color: '#fff', backgroundColor: '#000',
