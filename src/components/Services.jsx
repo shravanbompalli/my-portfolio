@@ -208,6 +208,41 @@ export default function Services() {
                               ))}
                             </motion.div>
                           )}
+                          {/* Mobile-only tappable image */}
+                          {s.filter_key && s.image_url && (
+                            <motion.div
+                              className="services-mobile-image"
+                              initial={{ opacity: 0, y: 10 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              transition={{ delay: 0.2, duration: 0.3 }}
+                              onClick={() => navigate(`/portfolio?category=${encodeURIComponent(s.filter_key)}`)}
+                              style={{
+                                position: 'relative', borderRadius: '8px', overflow: 'hidden',
+                                height: '200px', cursor: 'pointer',
+                              }}
+                            >
+                              <img
+                                src={s.image_url}
+                                alt={s.title}
+                                style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', filter: 'saturate(1.4)' }}
+                              />
+                              <div style={{
+                                position: 'absolute', inset: 0,
+                                background: 'linear-gradient(transparent 50%, rgba(0,0,0,0.6) 100%)',
+                                pointerEvents: 'none',
+                              }} />
+                              <span style={{
+                                position: 'absolute', bottom: '12px', left: '14px',
+                                fontFamily: '"Geist", sans-serif', fontSize: '13px', fontWeight: 500,
+                                color: '#fff', display: 'flex', alignItems: 'center', gap: '6px',
+                              }}>
+                                View Projects
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                                  <path d="M5 12h14"/><path d="M12 5l7 7-7 7"/>
+                                </svg>
+                              </span>
+                            </motion.div>
+                          )}
                         </div>
 
                         {/* Right: View Projects button — desktop only */}
@@ -312,9 +347,11 @@ export default function Services() {
       </div>
       <style>{`
         .services-floating-image { display: block; }
+        .services-mobile-image { display: none; }
         @media (max-width: 809px) {
           .services-floating-image { display: none !important; }
           .services-view-projects-btn { display: none !important; }
+          .services-mobile-image { display: block !important; }
         }
       `}</style>
     </section>
