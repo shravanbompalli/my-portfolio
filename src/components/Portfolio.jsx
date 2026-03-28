@@ -7,6 +7,7 @@ const spring = { type: 'spring', stiffness: 70, damping: 12, mass: 0.8 }
 
 export default function Portfolio({ homepageOnly }) {
   const [projects, setProjects] = useState([])
+  const [loading, setLoading] = useState(true)
   const [hov, setHov] = useState(null)
   const [searchParams] = useSearchParams()
   const categoryFilter = searchParams.get('category')
@@ -14,6 +15,7 @@ export default function Portfolio({ homepageOnly }) {
   const [filterLabel, setFilterLabel] = useState('')
 
   useEffect(() => {
+    setLoading(true)
     async function load() {
       let query = supabase
         .from('projects')
@@ -24,6 +26,7 @@ export default function Portfolio({ homepageOnly }) {
       if (categoryFilter && !homepageOnly) query = query.eq('service_category', categoryFilter)
       const { data } = await query
       if (data) setProjects(data)
+      setLoading(false)
 
       if (categoryFilter && !homepageOnly) {
         const { data: svc } = await supabase
@@ -39,7 +42,7 @@ export default function Portfolio({ homepageOnly }) {
     load()
   }, [homepageOnly, categoryFilter])
 
-  if (!projects.length) {
+  if (!loading && !projects.length) {
     if (categoryFilter && !homepageOnly) {
       return (
         <section id="portfolio" style={{ backgroundColor: '#f5f5f5', padding: 'clamp(60px, 8vw, 100px) clamp(18px, 4vw, 40px)' }}>
