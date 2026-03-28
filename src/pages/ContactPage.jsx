@@ -77,10 +77,11 @@ export default function ContactPage() {
 
       {/* ── Hero: portrait photo left, text right (same layout as About) ── */}
       <section className="contact-hero" style={{
-        height: '100dvh', backgroundColor: '#f5f5f5',
+        backgroundColor: '#f5f5f5',
         display: 'flex', alignItems: 'stretch',
         padding: 'clamp(16px, 3vw, 40px)',
         gap: 'clamp(24px, 4vw, 60px)',
+        height: '100dvh',
       }}>
         {/* Portrait photo */}
         <motion.div
@@ -385,12 +386,12 @@ export default function ContactPage() {
             flex-direction: column !important;
             height: auto !important;
             min-height: 0 !important;
-            padding-bottom: clamp(40px, 8vw, 60px) !important;
+            padding-bottom: 40px !important;
           }
           .contact-hero-photo {
             width: 100% !important;
-            height: auto !important;
-            aspect-ratio: 3/4 !important;
+            height: 56vw !important;
+            aspect-ratio: unset !important;
             flex-shrink: 0 !important;
           }
           .contact-headline-wrap {
