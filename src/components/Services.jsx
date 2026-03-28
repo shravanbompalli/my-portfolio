@@ -217,9 +217,9 @@ export default function Services() {
                             initial={{ opacity: 0, x: 10 }}
                             animate={{ opacity: 1, x: 0 }}
                             transition={{ delay: 0.2, duration: 0.3 }}
-                            onClick={e => { e.stopPropagation(); navigate(`/portfolio?category=${s.filter_key}`) }}
-                            onMouseEnter={() => setButtonHovered(true)}
-                            onMouseLeave={() => setButtonHovered(false)}
+                            onClick={e => { e.stopPropagation(); navigate(`/portfolio?category=${encodeURIComponent(s.filter_key)}`) }}
+                            onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#ff4d00'; setButtonHovered(true) }}
+                            onMouseLeave={e => { e.currentTarget.style.backgroundColor = '#000'; setButtonHovered(false) }}
                             style={{
                               flexShrink: 0, alignSelf: 'center',
                               fontFamily: '"Geist", sans-serif', fontSize: '14px', fontWeight: 500,
@@ -229,8 +229,6 @@ export default function Services() {
                               transition: 'background-color 0.3s ease',
                               whiteSpace: 'nowrap',
                             }}
-                            onMouseOver={e => e.currentTarget.style.backgroundColor = '#ff4d00'}
-                            onMouseOut={e => { e.currentTarget.style.backgroundColor = '#000'; setButtonHovered(false) }}
                           >
                             View Projects
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
