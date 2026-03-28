@@ -21,11 +21,11 @@ export default function Portfolio({ homepageOnly }) {
         .eq('is_active', true)
         .order('sort_order')
       if (homepageOnly) query = query.eq('show_on_homepage', true)
-      if (categoryFilter) query = query.eq('service_category', categoryFilter)
+      if (categoryFilter && !homepageOnly) query = query.eq('service_category', categoryFilter)
       const { data } = await query
       if (data) setProjects(data)
 
-      if (categoryFilter) {
+      if (categoryFilter && !homepageOnly) {
         const { data: svc } = await supabase
           .from('services')
           .select('title')
@@ -101,28 +101,6 @@ export default function Portfolio({ homepageOnly }) {
             }}>Selected Work</h2>
           </div>
 
-          {categoryFilter && !homepageOnly && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: 'clamp(20px, 3vw, 32px)' }}>
-              <span style={{
-                fontFamily: '"Geist", sans-serif', fontSize: '14px', fontWeight: 400,
-                color: '#000', backgroundColor: '#eee',
-                padding: '8px 16px', borderRadius: '40px',
-                display: 'flex', alignItems: 'center', gap: '8px',
-              }}>
-                {filterLabel || categoryFilter}
-                <button
-                  onClick={() => navigate('/portfolio')}
-                  style={{
-                    background: 'none', border: 'none', cursor: 'pointer',
-                    color: '#404040', fontSize: '16px', lineHeight: 1,
-                    padding: '0 2px', fontFamily: '"Geist", sans-serif',
-                  }}
-                  aria-label="Clear filter"
-                >×</button>
-              </span>
-            </div>
-          )}
-
           {hasMore && (
             <Link
               to="/portfolio"
@@ -143,6 +121,30 @@ export default function Portfolio({ homepageOnly }) {
             </Link>
           )}
         </motion.div>
+
+        {categoryFilter && !homepageOnly && (
+          <div style={{ marginBottom: 'clamp(20px, 3vw, 32px)' }}>
+            <span style={{
+              fontFamily: '"Geist", sans-serif', fontSize: '14px', fontWeight: 400,
+              color: '#000', backgroundColor: '#eee',
+              padding: '8px 16px', borderRadius: '40px',
+              display: 'inline-flex', alignItems: 'center', gap: '8px',
+            }}>
+              {filterLabel || categoryFilter}
+              <button
+                onClick={() => navigate('/portfolio')}
+                style={{
+                  background: 'none', border: 'none', cursor: 'pointer',
+                  color: '#404040', fontSize: '16px', lineHeight: 1,
+                  padding: '0 2px', fontFamily: '"Geist", sans-serif',
+                }}
+                onMouseEnter={e => e.currentTarget.style.color = '#000'}
+                onMouseLeave={e => e.currentTarget.style.color = '#404040'}
+                aria-label="Clear filter"
+              >×</button>
+            </span>
+          </div>
+        )}
 
         <div
           className="portfolio-grid"
