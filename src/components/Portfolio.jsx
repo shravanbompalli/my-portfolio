@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { supabase } from '../lib/supabase'
 
@@ -8,6 +8,10 @@ const spring = { type: 'spring', stiffness: 70, damping: 12, mass: 0.8 }
 export default function Portfolio({ homepageOnly }) {
   const [projects, setProjects] = useState([])
   const [hov, setHov] = useState(null)
+  const [searchParams] = useSearchParams()
+  const categoryFilter = searchParams.get('category')
+  const navigate = useNavigate()
+  const [filterLabel, setFilterLabel] = useState('')
 
   useEffect(() => {
     async function load() {
@@ -17,13 +21,46 @@ export default function Portfolio({ homepageOnly }) {
         .eq('is_active', true)
         .order('sort_order')
       if (homepageOnly) query = query.eq('show_on_homepage', true)
+      if (categoryFilter) query = query.eq('service_category', categoryFilter)
       const { data } = await query
       if (data) setProjects(data)
+
+      if (categoryFilter) {
+        const { data: svc } = await supabase
+          .from('services')
+          .select('title')
+          .eq('filter_key', categoryFilter)
+          .single()
+        setFilterLabel(svc?.title || categoryFilter)
+      } else {
+        setFilterLabel('')
+      }
     }
     load()
-  }, [homepageOnly])
+  }, [homepageOnly, categoryFilter])
 
-  if (!projects.length) return null
+  if (!projects.length) {
+    if (categoryFilter && !homepageOnly) {
+      return (
+        <section id="portfolio" style={{ backgroundColor: '#f5f5f5', padding: 'clamp(60px, 8vw, 100px) clamp(18px, 4vw, 40px)' }}>
+          <div style={{ maxWidth: '1400px', margin: '0 auto', textAlign: 'center', paddingTop: '40px' }}>
+            <p style={{ fontFamily: '"Geist", sans-serif', fontSize: '18px', color: '#aaa' }}>
+              No projects found for this category.
+            </p>
+            <button
+              onClick={() => navigate('/portfolio')}
+              style={{
+                marginTop: '16px', fontFamily: '"Geist", sans-serif', fontSize: '15px',
+                fontWeight: 500, color: '#fff', backgroundColor: '#000',
+                padding: '12px 24px', borderRadius: '40px', border: 'none', cursor: 'pointer',
+              }}
+            >View All Work</button>
+          </div>
+        </section>
+      )
+    }
+    return null
+  }
 
   const shown = projects
   const hasMore = homepageOnly
@@ -63,6 +100,28 @@ export default function Portfolio({ homepageOnly }) {
               lineHeight: 1, letterSpacing: '-0.02em', margin: 0,
             }}>Selected Work</h2>
           </div>
+
+          {categoryFilter && !homepageOnly && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: 'clamp(20px, 3vw, 32px)' }}>
+              <span style={{
+                fontFamily: '"Geist", sans-serif', fontSize: '14px', fontWeight: 400,
+                color: '#000', backgroundColor: '#eee',
+                padding: '8px 16px', borderRadius: '40px',
+                display: 'flex', alignItems: 'center', gap: '8px',
+              }}>
+                {filterLabel || categoryFilter}
+                <button
+                  onClick={() => navigate('/portfolio')}
+                  style={{
+                    background: 'none', border: 'none', cursor: 'pointer',
+                    color: '#404040', fontSize: '16px', lineHeight: 1,
+                    padding: '0 2px', fontFamily: '"Geist", sans-serif',
+                  }}
+                  aria-label="Clear filter"
+                >×</button>
+              </span>
+            </div>
+          )}
 
           {hasMore && (
             <Link
