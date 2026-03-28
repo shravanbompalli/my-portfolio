@@ -390,7 +390,7 @@ export default function ContactPage() {
           }
           .contact-hero-photo {
             width: 100% !important;
-            height: 55vh !important;
+            height: 75vh !important;
             aspect-ratio: unset !important;
             flex-shrink: 0 !important;
           }
