@@ -1,7 +1,17 @@
 {
   "permissions": {
     "allow": [
-      "Bash(bash \"C:/Users/91809/.claude/plugins/cache/claude-plugins-official/superpowers/5.0.5/skills/brainstorming/scripts/start-server.sh\" --project-dir \"C:/Users/91809/OneDrive/Desktop/AI_Projects/portfolio\")"
+      "Bash(*)",
+      "Edit",
+      "Write",
+      "Read",
+      "Glob",
+      "Grep",
+      "WebFetch(domain:simplest-breakfast-965445.framer.app)",
+      "Skill(update-config)"
     ]
+  },
+  "enabledPlugins": {
+    "claude-mem@thedotmack": false
   }
 }

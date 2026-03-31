@@ -2,6 +2,7 @@
 # Project: Shravan Bompalli Portfolio
 # Stack: Vite + React 18 + Tailwind CSS v3 + Framer Motion + Supabase + Cloudinary
 # Reference template: https://simplest-breakfast-965445.framer.app/
+# Last updated: 2026-03-26
 
 ---
 
@@ -13,7 +14,10 @@
 4. **The Framer template is the single source of truth** for any visual/layout question.
 5. **Animations must be dramatically visible.** Bold, slow, pronounced spring overshoot. Never subtle.
 6. **Admin saves images immediately** via `directSaveField()` — no save button needed for uploads.
-7. **RLS is disabled** on all Supabase tables. Must re-enable before production.
+7. **RLS is ENABLED** on all Supabase tables. Admin writes require an authenticated Supabase session.
+8. **Admin auth uses Supabase Auth** — `supabase.auth.signInWithPassword()`. Email comes from `VITE_ADMIN_EMAIL` env var. No hardcoded passwords anywhere.
+9. **MyShots parallax uses a single shared `scrollY`** from `useScroll()` in `ShotsSection` — never add per-card `useScroll` back (causes lag).
+10. **Never add `backdropFilter: blur()` inside MyShots cards** — too many compositor layers, causes GPU lag.
 
 ---
 
@@ -24,33 +28,31 @@ portfolio-website/
 ├── src/
 │   ├── pages/
 │   │   ├── Home.jsx              ← Landing page (Hero + all scroll sections)
-│   │   ├── AboutPage.jsx         ← About page (needs animation polish)
+│   │   ├── AboutPage.jsx         ← About page ✅ animations done
 │   │   ├── PortfolioPage.jsx     ← Full projects grid
 │   │   ├── ProjectDetailPage.jsx ← Individual project detail
 │   │   ├── MyShotsPage.jsx       ← Gallery masonry
-│   │   ├── ContactPage.jsx       ← Contact form (needs animation polish)
-│   │   └── AdminPanel.jsx        ← Full CMS (/admin, password: shravan2025)
+│   │   ├── ContactPage.jsx       ← Contact form ✅ animations done
+│   │   └── AdminPanel.jsx        ← Full CMS (/admin — uses Supabase Auth)
 │   ├── components/
-│   │   ├── Hero.jsx              ← Video/image toggle, parallax, grid lines
 │   │   ├── Navbar.jsx
 │   │   ├── Footer.jsx            ← Dark CTA, nav columns, stats
 │   │   ├── Services.jsx          ← Numbered accordion, image on expand
-│   │   ├── Portfolio.jsx         ← 2-col cards, gradient masks
+│   │   ├── Portfolio.jsx         ← 2-col masonry cards, homepageOnly prop
 │   │   ├── TestimonialHighlight.jsx ← Spring animations, quote + 2 images
 │   │   ├── AboutText.jsx         ← Char-by-char scroll color reveal
 │   │   ├── Collaborations.jsx    ← Logo grid with green badges
-│   │   ├── MyShots.jsx           ← Gallery component
+│   │   ├── MyShots.jsx           ← Masonry gallery, MagneticCard + parallax
 │   │   ├── LoadingAnimation.jsx  ← 5 black blocks, 0→100% counter
 │   │   └── CustomCursor.jsx      ← Camera aperture dot, trail particles
+│   ├── lib/
+│   │   └── supabase.js           ← Supabase client (persistSession: true)
 │   ├── App.jsx                   ← Routes + 5-block curtain page transitions
 │   ├── App.css
 │   ├── index.css
 │   └── main.jsx
-├── agents/
-├── commands/
-├── plugins/
-├── skills/
-├── .env                          ← VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY
+├── vercel.json                   ← Security headers (X-Frame-Options, CSP, etc.)
+├── .env                          ← VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY, VITE_ADMIN_EMAIL
 ├── CLAUDE.md                     ← this file
 └── package.json
 ```
@@ -75,9 +77,9 @@ npm run lint      # ESLint check
 | `/` | Home.jsx | ✅ Built |
 | `/portfolio` | PortfolioPage.jsx | ✅ Built |
 | `/portfolio/:slug` | ProjectDetailPage.jsx | ✅ Built |
-| `/about` | AboutPage.jsx | 🔧 Needs animation polish |
+| `/about` | AboutPage.jsx | ✅ Built |
 | `/my-shots` | MyShotsPage.jsx | ✅ Built |
-| `/contact` | ContactPage.jsx | 🔧 Needs animation polish |
+| `/contact` | ContactPage.jsx | ✅ Built |
 | `/admin` | AdminPanel.jsx | ✅ Built |
 
 ---
@@ -105,10 +107,16 @@ Phone:   ≤ 809px
 
 ## 🎬 Animation Rules
 
-### Parallax (Hero.jsx)
+### Parallax (Home.jsx Hero)
 - Uses `requestAnimationFrame` + direct DOM refs — **never useState**
 - Content: `scrollY * -0.15`, BG: `scrollY * 0.3`
 - BG transition set to `none` after initial scale animation completes
+
+### MyShots Parallax
+- Single `const { scrollY } = useScroll()` in `ShotsSection`
+- Passed as prop to each `ParallaxImage`
+- Each `ParallaxImage` uses `useLayoutEffect` to compute its own `inputRange` from its DOM position
+- Entry blur capped at `blur(3px)` max — never go higher (GPU cost)
 
 ### Springs (Framer Motion)
 - Testimonial quote: `stiffness: 70, damping: 10, mass: 0.7`
@@ -127,75 +135,109 @@ Phone:   ≤ 809px
 
 ## 🗄️ Database (Supabase)
 
+### RLS Status — ENABLED ✅
+All tables have RLS enabled with these policies:
+- **Public read**: `site_settings`, `services`, `projects`, `reviews`, `faqs`, `my_shots`, `collaborations` — anyone can SELECT
+- **Admin write**: all above tables — only authenticated users can INSERT/UPDATE/DELETE
+- **contact_messages**: anon INSERT allowed, only authenticated can SELECT/DELETE
+
+### Storage
+- Bucket name: `images`
+- Bucket must be set to **Public** in Supabase dashboard (images served via CDN, no auth needed for reads)
+- Authenticated uploads work automatically once admin is logged in
+
 ### site_settings (key-value JSONB)
-- `hero`: headline, tagline, subtext, bg_image, recent_work_image, hero_video, hero_mode ("image"/"video")
+- `hero`: headline, tagline, subtext, bg_image, recent_work_image, hero_video, hero_mode ("image"/"video"), text_color, show_tagline, show_bottom_bar, show_award
 - `brand`: name, title, location, instagram
-- `contact`: email, phone
+- `contact`: email, phone, contact_image
 - `social`: instagram, youtube
 - `awards`: name, years, count, label
 - `about`: bio
 - `testimonial`: quote, name, role, reviewer_image, image_1, image_2
 - `stats`: projects, satisfaction, hours
+- `portfolio`: portfolio_image
+- `animations`: heading (blur/gradient/fuzzy/fade/none)
+
+### projects table (extra columns added)
+- `show_on_homepage` boolean DEFAULT false — controls homepage Portfolio section
+- `cover_aspect_ratio` text DEFAULT 'auto' — controls card aspect ratio in grid (e.g. '4/5', '16/9')
 
 ### Other tables
-`services` · `projects` (slug, gallery_images JSONB, video_url) · `reviews` · `faqs` · `my_shots` (media_type, video_url) · `collaborations` · `contact_messages`
+`services` · `projects` · `reviews` · `faqs` · `my_shots` (media_type, video_url) · `collaborations` · `contact_messages`
 
 ### Media Rules
-- **Images → Supabase Storage** (with compression)
+- **Images → Supabase Storage** (bucket: `images`, with compression)
 - **Videos → Cloudinary** (cloud: `dj7us5uhy`, preset: `portfolio_uploads`)
 - Admin uses `directSaveField()` — images auto-save on upload, no button needed
 
 ---
 
-## 🧩 React Bits Library
+## 🔐 Authentication & Security
 
-Use components from `https://reactbits.dev/` for unpolished sections.
-Always use **JS + Tailwind** variant.
+### Admin Login
+- Route: `/admin`
+- Uses `supabase.auth.signInWithPassword({ email: VITE_ADMIN_EMAIL, password: enteredPassword })`
+- Session persists across refreshes (`persistSession: true` in supabase.js)
+- Logout calls `supabase.auth.signOut()`
+- To reset admin password: Supabase Dashboard → Authentication → Users
 
-### Best candidates
-- `AboutPage.jsx` — BlurText, SplitText for headings
-- `ContactPage.jsx` — FadeContent, ScrollReveal
-- Section headers — GradientText, SplitText
-- Must match design tokens (#ff4d00 accent, Geist font, #f5f5f5 bg)
+### Environment Variables (required in .env AND Vercel)
+```
+VITE_SUPABASE_URL=...
+VITE_SUPABASE_ANON_KEY=...
+VITE_ADMIN_EMAIL=...        ← email of the admin user created in Supabase Auth
+```
 
-Install via:
+### Security Headers
+- Configured in `vercel.json` — X-Frame-Options, X-Content-Type-Options, XSS-Protection, Referrer-Policy, Permissions-Policy
+
+### Contact Form
+- Validates email with regex, trims + limits name (100 chars), email (200 chars), message (2000 chars)
+- No raw errors exposed to console or user
+
+### Embed URLs (ProjectDetailPage)
+- Whitelisted to `youtube.com`, `youtu.be`, `vimeo.com` only
+- Validated with `new URL()` hostname check before rendering iframe
+
+---
+
+## 🧩 Admin Panel Features
+
+| Feature | Where |
+|---------|-------|
+| Hero visibility toggles | Hero & Brand section — show_tagline, show_bottom_bar, show_award |
+| Homepage project picker | Portfolio section — "Show on Homepage" toggle per project (auto-saves) |
+| Cover aspect ratio | Portfolio section — per-project dropdown below cover image |
+| Video/Image hero mode | Hero & Brand section — toggle switch |
+| Headline color | Hero & Brand section — white/orange/gold/gradient swatches |
+| All media uploads | Auto-save via directSaveField() |
+
+---
+
+## 🧩 React Bits Components (installed)
+
+Located in `src/components/reactbits/`:
+- `BlurText.jsx` — word-by-word blur reveal (used in AboutPage, ContactPage headings)
+- `FadeReveal.jsx` — fade + translateY on scroll (used in ContactPage panels)
+- `GradientText.jsx` — animated gradient text (used in Hero headline option)
+- `FuzzyText.jsx` — fuzzy hover effect (used in ProjectDetailPage heading option)
+
+Install new ones via:
 ```bash
 npx shadcn@latest add @react-bits/ComponentName-JS-TW
 ```
+Always use **JS + Tailwind** variant. Must match design tokens.
 
 ---
 
-## 🔧 What Still Needs Work (Priority Order)
+## 🔧 What Still Needs Work
 
-1. Upload ~38 images via `/admin` (hero BG, services ×6, portfolio covers, testimonial portraits)
-2. Visual comparison polish — side-by-side with Framer template
-3. `AboutPage.jsx` — add Framer Motion + React Bits animations
-4. `ContactPage.jsx` — add Framer Motion + React Bits animations
-5. Mobile responsiveness — 3 breakpoints, one component at a time, LAST
-6. Deploy to Vercel — GitHub + env vars (VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY)
-7. SEO + meta tags — lowest priority
+**Immediate (pre-launch):**
+1. Upload ~38 images via `/admin` — hero BG, services ×6, portfolio covers, testimonial portraits
+2. Deploy to Vercel — GitHub repo + set env vars (VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY, VITE_ADMIN_EMAIL)
 
----
-
-## 🤖 Subagents for This Project
-
-| Agent | When to use |
-|-------|------------|
-| `frontend-design.md` | Visual polish, animation work, React Bits integration |
-| `a11y-checker.md` | Accessibility review before deploy |
-| `seo-reviewer.md` | Meta tags, OG images phase |
-
-Delegate with: `Use a subagent to review animations in Hero.jsx against the Framer template.`
-
----
-
-## 🔌 MCPs for This Project
-
-Enable only these:
-- `vercel` — for deployment
-- `github` — for version control
-
-Disable everything else. Context window protection is critical.
+**Post-launch improvements → see `PENDING.md` for full list with file references.**
+Top items: project hero video, MyShots lightbox, image lazy loading, contact email notification, JS code splitting.
 
 ---
 
@@ -205,7 +247,10 @@ Disable everything else. Context window protection is critical.
 2. Never add BentoCards, Reviews carousel, or FAQs back (intentionally removed)
 3. Never do mobile responsiveness at the same time as animation work
 4. Never mix image/video storage (images=Supabase, videos=Cloudinary)
-5. Never deploy without re-enabling RLS on all Supabase tables
+5. Never deploy without RLS enabled — it already is, don't disable it
+6. Never add `backdropFilter: blur()` inside MyShots card children — kills GPU performance
+7. Never add per-card `useScroll()` in MyShots — use the shared one from ShotsSection
+8. Never hardcode passwords — admin auth must go through Supabase Auth
 
 ---
 
@@ -221,9 +266,9 @@ Disable everything else. Context window protection is critical.
 
 ## 💡 Working Style
 
-- Always ask for current file code before making changes
-- Read it completely before making changes
+- Always read the file fully before making changes
 - Give targeted patches (find X → replace with Y)
 - Test one thing at a time — easy to revert
 - Reference `https://simplest-breakfast-965445.framer.app/` for any visual question
 - Treat this like a high-end cinematic website, not a generic portfolio
+- When diagnosing performance issues — identify root cause first, confirm with user before fixing

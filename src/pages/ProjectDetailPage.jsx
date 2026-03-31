@@ -665,7 +665,7 @@ export default function ProjectDetailPage() {
         .order('sort_order')
       if (projects) {
         setAllProjects(projects)
-        const found = projects.find(p => p.slug === slug)
+        const found = projects.find(p => p.slug === slug || String(p.id) === slug)
         if (found) setProject(found)
         else navigate('/portfolio', { replace: true })
       }
@@ -689,7 +689,7 @@ export default function ProjectDetailPage() {
 
   if (!project) return null
 
-  const currentIndex = allProjects.findIndex(p => p.slug === slug)
+  const currentIndex = allProjects.findIndex(p => p.slug === slug || String(p.id) === slug)
   const prevProject = currentIndex > 0 ? allProjects[currentIndex - 1] : null
   const nextProject = currentIndex < allProjects.length - 1 ? allProjects[currentIndex + 1] : null
 
