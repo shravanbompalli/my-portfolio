@@ -73,6 +73,14 @@ function getRatio(ar) {
   return map[ar] || '16/9'
 }
 
+/* ── Cloudinary first-frame poster — avoids a black box on iOS before play ── */
+function getPoster(videoUrl) {
+  if (!videoUrl || !videoUrl.includes('res.cloudinary.com') || !videoUrl.includes('/video/upload/')) return undefined
+  return videoUrl
+    .replace('/upload/', '/upload/so_0,w_1080,c_limit/')
+    .replace(/\.(mp4|mov|webm)(\?.*)?$/i, '.jpg')
+}
+
 /* ── Cinematic Reveal — horizontal wipe left→right ── */
 function CinematicReveal({ children, delay = 0 }) {
   const ref = useRef()
@@ -151,7 +159,9 @@ function VideoItem({ url, embedUrl, aspectRatio, animation, delay }) {
   const [playing, setPlaying] = useState(false)
   const [iframeActive, setIframeActive] = useState(false)
   const videoRef = useRef()
-  const ratio = getRatio(aspectRatio)
+  // Real dimensions from the file win over the admin-set label, so a mislabelled video is never cropped
+  const [naturalRatio, setNaturalRatio] = useState(null)
+  const ratio = naturalRatio || getRatio(aspectRatio)
 
   // Extract YouTube/Vimeo embed src — whitelist only trusted domains
   function getEmbedSrc(rawUrl) {
@@ -176,6 +186,7 @@ function VideoItem({ url, embedUrl, aspectRatio, animation, delay }) {
   }
 
   const embedSrc = getEmbedSrc(embedUrl)
+  const isTouch = typeof window !== 'undefined' && window.matchMedia('(hover: none)').matches
 
   const mediaContent = embedSrc ? (
     /* ── Embed player (YouTube/Vimeo) ── */
@@ -191,7 +202,8 @@ function VideoItem({ url, embedUrl, aspectRatio, animation, delay }) {
       />
       {/* Transparent overlay — blocks iframe from swallowing scroll events.
           Removed on click so YouTube controls still work; restored on mouse-leave. */}
-      {!iframeActive && (
+      {/* Touch devices skip the overlay — it would force two taps to start playback */}
+      {!iframeActive && !isTouch && (
         <div
           onClick={() => setIframeActive(true)}
           style={{ position: 'absolute', inset: 0, cursor: 'pointer', zIndex: 1 }}
@@ -202,16 +214,25 @@ function VideoItem({ url, embedUrl, aspectRatio, animation, delay }) {
     /* ── Cloudinary direct video ── */
     <div style={{ position: 'relative', width: '100%', height: '100%', backgroundColor: '#000', cursor: 'pointer' }}
       onClick={() => {
-        setPlaying(!playing)
-        if (videoRef.current) {
-          playing ? videoRef.current.pause() : videoRef.current.play()
-        }
+        const el = videoRef.current
+        if (!el) return
+        // UI state follows the element's real play/pause events, so a rejected play() never desyncs the overlay
+        if (el.paused) el.play().catch(() => {})
+        else el.pause()
       }}>
       <video
         ref={videoRef}
         src={url}
+        poster={getPoster(url)}
         loop
         playsInline
+        preload="metadata"
+        onPlay={() => setPlaying(true)}
+        onPause={() => setPlaying(false)}
+        onLoadedMetadata={e => {
+          const { videoWidth: w, videoHeight: h } = e.currentTarget
+          if (w && h) setNaturalRatio(`${w}/${h}`)
+        }}
         style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
       />
       <div style={{
@@ -243,21 +264,24 @@ function VideoItem({ url, embedUrl, aspectRatio, animation, delay }) {
 
   // Portrait videos (9:16, 3:4, etc.) cap height like a phone reel so they fit in one scroll.
   // Landscape / square use the normal full-column-width sizing.
-  const PORTRAIT_RATIOS = new Set(['9/16', '2/3', '3/4', '4/5'])
-  const isPortraitVideo = PORTRAIT_RATIOS.has(ratio)
+  const [rw, rh] = ratio === 'auto' ? [16, 9] : ratio.split('/').map(Number)
+  const isPortraitVideo = rh > rw
 
+  // Portrait: width is derived from a height cap × ratio (see .portrait-video CSS), then capped at 100%.
+  // Box always keeps the true ratio, so objectFit: cover never crops the frame — on any screen size.
   const containerStyle = isPortraitVideo
-    ? { maxHeight: 'clamp(480px, 65vh, 600px)', aspectRatio: ratio, width: 'auto', borderRadius: '16px', overflow: 'hidden', backgroundColor: '#111' }
+    ? { '--ar': rw / rh, aspectRatio: ratio, borderRadius: '16px', overflow: 'hidden', backgroundColor: '#111' }
     : { width: '100%', ...(ratio !== 'auto' && { aspectRatio: ratio }), borderRadius: '16px', overflow: 'hidden', backgroundColor: '#111' }
 
   return (
-    <div style={containerStyle}>
+    <div className={isPortraitVideo ? 'portrait-video' : undefined} style={containerStyle}>
       {embedSrc ? (
         mediaContent
       ) : animation === 'cinematic' ? (
         <CinematicReveal delay={delay}>{mediaContent}</CinematicReveal>
       ) : (
-        <ParallaxMedia speed={0.06}>{mediaContent}</ParallaxMedia>
+        // No ParallaxMedia on videos — its 120% oversize crop hides part of the frame
+        mediaContent
       )}
     </div>
   )
@@ -554,13 +578,15 @@ function BTSStrip({ videoUrl, title }) {
               <video
                 ref={videoRef}
                 src={videoUrl}
+                poster={getPoster(videoUrl)}
                 loop
                 playsInline
-                preload="none"
+                preload="metadata"
                 onPlay={() => setPlaying(true)}
                 onPause={() => setPlaying(false)}
                 onEnded={() => setPlaying(false)}
-                style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                // contain: any BTS ratio (vertical included) shows in full inside the 16:9 frame
+                style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }}
               />
               {/* Play / Pause overlay */}
               <div style={{
@@ -998,13 +1024,18 @@ export default function ProjectDetailPage() {
           font-family: inherit !important;
           margin: 0 0 20px !important;
         }
+        .portrait-video {
+          width: min(100%, calc(clamp(480px, 65vh, 600px) * var(--ar)));
+          flex-shrink: 0;
+        }
+        :not(.portrait-video-group) > .portrait-video { margin: 0 auto; }
         @media (max-width: 809px) {
+          .portrait-video { width: min(100%, calc(80svh * var(--ar))) !important; }
           .nav-contact, .nav-info { display: none !important; }
           .project-info-grid { flex-direction: column !important; gap: 32px !important; }
           .project-info-grid > div:last-child { flex: 1 1 100% !important; padding-top: 0 !important; }
           .gallery-grid { columns: 1 !important; }
-          .portrait-video-group { flex-direction: column !important; align-items: stretch !important; }
-          .portrait-video-group > * { width: 100% !important; }
+          .portrait-video-group { flex-direction: column !important; align-items: center !important; }
         }
       `}</style>
     </div>
