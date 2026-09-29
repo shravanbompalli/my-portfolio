@@ -10,19 +10,17 @@ const spring = { type: 'spring', stiffness: 70, damping: 12, mass: 0.8 }
 export default function PortfolioPage() {
   const [brand, setBrand] = useState(null)
   const [contact, setContact] = useState(null)
-  const [portfolio, setPortfolio] = useState(null)
 
   useEffect(() => {
     async function load() {
       const { data } = await supabase
         .from('site_settings')
         .select('key, value')
-        .in('key', ['brand', 'contact', 'portfolio'])
+        .in('key', ['brand', 'contact'])
       if (data) {
         data.forEach(r => {
           if (r.key === 'brand') setBrand(r.value)
           if (r.key === 'contact') setContact(r.value)
-          if (r.key === 'portfolio') setPortfolio(r.value)
         })
       }
     }
@@ -65,43 +63,12 @@ export default function PortfolioPage() {
           animate={{ opacity: 1, y: 0 }}
           transition={spring}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0', flexWrap: 'nowrap', marginBottom: '24px' }}>
-            <h1 style={{
-              fontFamily: '"Geist",sans-serif', fontSize: 'clamp(48px,10vw,130px)', fontWeight: 700,
-              letterSpacing: '-0.04em', lineHeight: 1, color: '#000', margin: 0,
-            }}>
-              PORT
-            </h1>
-            <div className="portfolio-inline-image" style={{
-              width: 'clamp(80px,12vw,160px)', height: 'clamp(60px,8vw,100px)',
-              borderRadius: '8px', overflow: 'hidden', backgroundColor: '#ddd',
-              margin: '0 4px',
-            }}>
-              {portfolio?.portfolio_image ? (
-                <img src={portfolio.portfolio_image} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
-              ) : (
-                <div style={{ width: '100%', height: '100%', background: 'linear-gradient(135deg,#c8d8d8,#a0b0b0)' }} />
-              )}
-            </div>
-            <h1 style={{
-              fontFamily: '"Geist",sans-serif', fontSize: 'clamp(48px,10vw,130px)', fontWeight: 700,
-              letterSpacing: '-0.04em', lineHeight: 1, color: '#000', margin: 0,
-            }}>
-              FOLIO
-            </h1>
-          </div>
-
-          {/* Mobile-only full-width image — shown below headline on phone */}
-          <div className="portfolio-mobile-image" style={{
-            width: '100%', height: '200px', borderRadius: '8px',
-            overflow: 'hidden', backgroundColor: '#ddd', marginBottom: '8px',
+          <h1 style={{
+            fontFamily: '"Geist",sans-serif', fontSize: 'clamp(48px,10vw,130px)', fontWeight: 700,
+            letterSpacing: '-0.04em', lineHeight: 1, color: '#000', margin: '0 0 24px',
           }}>
-            {portfolio?.portfolio_image ? (
-              <img src={portfolio.portfolio_image} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
-            ) : (
-              <div style={{ width: '100%', height: '100%', background: 'linear-gradient(135deg,#c8d8d8,#a0b0b0)' }} />
-            )}
-          </div>
+            PORTFOLIO
+          </h1>
         </motion.div>
 
         <motion.div
@@ -136,11 +103,8 @@ export default function PortfolioPage() {
       <Footer />
 
       <style>{`
-        .portfolio-mobile-image { display: none; }
         @media (max-width: 809px) {
           .nav-contact, .nav-info { display: none !important; }
-          .portfolio-inline-image { display: none !important; }
-          .portfolio-mobile-image { display: block !important; }
         }
       `}</style>
     </div>

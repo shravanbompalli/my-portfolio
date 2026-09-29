@@ -254,6 +254,125 @@ function Btn({ children, onClick, variant = 'primary', small, disabled, fullWidt
   )
 }
 
+/* ── Homepage "Selected Work" picker — toggle + reorder, saves instantly ──
+   Writes only show_on_homepage / sort_order and patches local state in place,
+   so unsaved edits in the project cards below are never wiped. */
+function HomepagePicker({ projects, setProjects, showToast }) {
+  const [busy, setBusy] = useState(false)
+  const onCount = projects.filter(p => p.show_on_homepage && p.is_active).length
+
+  async function toggle(p) {
+    setBusy(true)
+    const next = !p.show_on_homepage
+    const { error } = await supabase.from('projects').update({ show_on_homepage: next }).eq('id', p.id)
+    if (error) showToast('Update failed. Please try again.', 'error')
+    else {
+      setProjects(prev => prev.map(x => x.id === p.id ? { ...x, show_on_homepage: next } : x))
+      showToast(next ? `"${p.title}" added to homepage` : `"${p.title}" removed from homepage`, 'success')
+    }
+    setBusy(false)
+  }
+
+  // Swap sort_order with the neighbouring project — same order drives Home and Portfolio pages
+  async function move(idx, dir) {
+    const a = projects[idx], b = projects[idx + dir]
+    if (!a || !b) return
+    setBusy(true)
+    const [r1, r2] = await Promise.all([
+      supabase.from('projects').update({ sort_order: b.sort_order }).eq('id', a.id),
+      supabase.from('projects').update({ sort_order: a.sort_order }).eq('id', b.id),
+    ])
+    if (r1.error || r2.error) showToast('Reorder failed. Please try again.', 'error')
+    else {
+      setProjects(prev => prev
+        .map(x => x.id === a.id ? { ...x, sort_order: b.sort_order } : x.id === b.id ? { ...x, sort_order: a.sort_order } : x)
+        .sort((x, y) => (x.sort_order ?? 0) - (y.sort_order ?? 0)))
+    }
+    setBusy(false)
+  }
+
+  const arrowBtn = (disabled) => ({
+    width: '26px', height: '26px', borderRadius: '6px', border: `1px solid ${border}`,
+    backgroundColor: 'transparent', color: disabled ? '#333' : gray, cursor: disabled ? 'default' : 'pointer',
+    fontSize: '12px', lineHeight: 1, padding: 0,
+  })
+
+  return (
+    <div style={{ backgroundColor: '#0d0d0d', borderRadius: '12px', padding: '14px', marginBottom: '20px', border: `1px solid ${accent}55` }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: '12px', flexWrap: 'wrap', marginBottom: '4px' }}>
+        <p style={{ fontFamily: '"Geist",sans-serif', fontSize: '13px', fontWeight: 600, color: white, margin: 0 }}>🏠 Homepage — Selected Work</p>
+        <span style={{ fontFamily: '"Geist",sans-serif', fontSize: '12px', color: onCount ? accent : gray }}>{onCount} shown on homepage</span>
+      </div>
+      <p style={{ fontFamily: '"Geist",sans-serif', fontSize: '11px', color: gray, margin: '0 0 12px' }}>
+        Switch on the projects to feature on the home page. Use ↑ ↓ to set the order — it also sets the order on the Portfolio page. Changes save instantly.
+      </p>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', opacity: busy ? 0.6 : 1, pointerEvents: busy ? 'none' : 'auto' }}>
+        {projects.map((p, idx) => (
+          <div key={p.id} style={{
+            display: 'flex', alignItems: 'center', gap: '10px', padding: '6px 8px', borderRadius: '8px',
+            backgroundColor: p.show_on_homepage ? '#1a0d05' : 'transparent',
+            border: `1px solid ${p.show_on_homepage ? accent + '44' : 'transparent'}`,
+          }}>
+            <div style={{ display: 'flex', gap: '4px', flexShrink: 0 }}>
+              <button onClick={() => move(idx, -1)} disabled={idx === 0} style={arrowBtn(idx === 0)} aria-label="Move up">↑</button>
+              <button onClick={() => move(idx, 1)} disabled={idx === projects.length - 1} style={arrowBtn(idx === projects.length - 1)} aria-label="Move down">↓</button>
+            </div>
+            <div style={{ width: '48px', height: '32px', borderRadius: '4px', overflow: 'hidden', backgroundColor: '#222', flexShrink: 0 }}>
+              {p.cover_image && <img src={p.cover_image} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />}
+            </div>
+            <span style={{ flex: 1, minWidth: 0, fontFamily: '"Geist",sans-serif', fontSize: '13px', color: p.is_active ? white : '#555', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {p.title}{!p.is_active && ' (hidden)'}
+            </span>
+            <div onClick={() => toggle(p)} role="switch" aria-checked={!!p.show_on_homepage} style={{
+              width: '36px', height: '20px', borderRadius: '10px', flexShrink: 0,
+              backgroundColor: p.show_on_homepage ? accent : '#333',
+              position: 'relative', cursor: 'pointer', transition: 'background-color 0.2s',
+            }}>
+              <div style={{
+                position: 'absolute', top: '3px', left: p.show_on_homepage ? '19px' : '3px',
+                width: '14px', height: '14px', borderRadius: '50%', backgroundColor: '#fff', transition: 'left 0.2s',
+              }} />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+/* ── Collapsible project card — closed by default so the list stays short ── */
+function ProjectCard({ project, children }) {
+  const [open, setOpen] = useState(false)
+  return (
+    <div style={{ backgroundColor: '#0d0d0d', borderRadius: '12px', marginBottom: '12px', border: `1px solid ${open ? accent + '55' : border}`, overflow: 'hidden' }}>
+      <div onClick={() => setOpen(!open)} style={{
+        display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 14px', cursor: 'pointer',
+        borderBottom: open ? `1px solid ${border}` : 'none', transition: 'background-color 0.15s',
+      }}
+        onMouseEnter={e => e.currentTarget.style.backgroundColor = '#1a1a1a'}
+        onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
+      >
+        <div style={{ width: '56px', height: '36px', borderRadius: '6px', overflow: 'hidden', backgroundColor: '#222', flexShrink: 0 }}>
+          {project.cover_image && <img src={project.cover_image} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />}
+        </div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <p style={{ fontFamily: '"Geist",sans-serif', fontSize: '14px', fontWeight: 600, color: project.is_active ? white : '#555', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {project.title || 'Untitled project'}
+          </p>
+          <p style={{ fontFamily: '"Geist",sans-serif', fontSize: '11px', color: gray, margin: '2px 0 0' }}>
+            {project.category}{!project.is_active && ' · hidden'}
+          </p>
+        </div>
+        {project.show_on_homepage && (
+          <span style={{ fontFamily: '"Geist",sans-serif', fontSize: '10px', fontWeight: 600, color: accent, border: `1px solid ${accent}`, padding: '2px 8px', borderRadius: '10px', flexShrink: 0 }}>Homepage</span>
+        )}
+        <span style={{ color: gray, transform: open ? 'rotate(180deg)' : 'rotate(0)', transition: 'transform 0.3s ease', fontSize: '12px', flexShrink: 0 }}>▼</span>
+      </div>
+      {open && <div style={{ padding: '14px' }}>{children}</div>}
+    </div>
+  )
+}
+
 function Section({ title, children, defaultOpen = false, badge }) {
   const [open, setOpen] = useState(defaultOpen)
   return (
@@ -1026,16 +1145,9 @@ export default function AdminPanel() {
 
         {/* ═══ PROJECTS ═══ */}
         <Section title="🖼️ Portfolio" badge={projects.length}>
-          <p style={{ fontFamily: '"Geist",sans-serif', fontSize: '11px', color: gray, margin: '0 0 6px', textTransform: 'uppercase' }}>Portfolio Page Heading Image</p>
-          <ImageUploader
-            value={settings.portfolio?.value?.portfolio_image}
-            folder="portfolio"
-            label="Portfolio heading photo"
-            onUpload={url => saveImage('portfolio', 'portfolio_image', url)}
-          />
-          <div style={{ marginTop: '20px' }} />
+          <HomepagePicker projects={projects} setProjects={setProjects} showToast={showToast} />
           {projects.map((p, i) => (
-            <div key={p.id} style={{ backgroundColor: '#0d0d0d', borderRadius: '12px', padding: '14px', marginBottom: '12px', border: `1px solid ${border}` }}>
+            <ProjectCard key={p.id} project={p}>
               
               {/* Basic Info */}
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '10px' }}>
@@ -1356,7 +1468,7 @@ export default function AdminPanel() {
                 </div>
               </div>
 
-            </div>
+            </ProjectCard>
           ))}
           <Btn onClick={() => saveRow('projects', { title: 'New Project', slug: 'new-project-' + Date.now(), category: 'Photography', description: '', sort_order: projects.length + 1, is_active: true, gallery_animation: 'parallax', image_display_style: 'parallax', gallery_videos: [], gallery_images: [] })}>+ Add Project</Btn>
         </Section>
