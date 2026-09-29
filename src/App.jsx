@@ -1,18 +1,37 @@
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom'
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, lazy, Suspense } from 'react'
 import { motion, useScroll, useSpring } from 'framer-motion'
 import Lenis from 'lenis'
 import CustomCursor from './components/CustomCursor'
 import Navbar from './components/Navbar'
 import LoadingAnimation from './components/LoadingAnimation'
 import Home from './pages/Home'
-import PortfolioPage from './pages/PortfolioPage'
-import ProjectDetailPage from './pages/ProjectDetailPage'
-import AboutPage from './pages/AboutPage'
-import MyShotsPage from './pages/MyShotsPage'
-import FramesPage from './pages/FramesPage'
-import ContactPage from './pages/ContactPage'
-import AdminPanel from './pages/AdminPanel'
+
+// Code splitting — Home ships in the main bundle (landing page); every other page,
+// including the large AdminPanel, is its own chunk fetched on demand.
+const pageImports = {
+  portfolio: () => import('./pages/PortfolioPage'),
+  projectDetail: () => import('./pages/ProjectDetailPage'),
+  about: () => import('./pages/AboutPage'),
+  myShots: () => import('./pages/MyShotsPage'),
+  frames: () => import('./pages/FramesPage'),
+  contact: () => import('./pages/ContactPage'),
+}
+const PortfolioPage = lazy(pageImports.portfolio)
+const ProjectDetailPage = lazy(pageImports.projectDetail)
+const AboutPage = lazy(pageImports.about)
+const MyShotsPage = lazy(pageImports.myShots)
+const FramesPage = lazy(pageImports.frames)
+const ContactPage = lazy(pageImports.contact)
+const AdminPanel = lazy(() => import('./pages/AdminPanel'))
+
+// Warm the public page chunks once the browser is idle, so page transitions stay instant.
+// Admin is never prefetched — visitors don't need it.
+function prefetchPages() {
+  const run = () => Object.values(pageImports).forEach(load => load().catch(() => {}))
+  if ('requestIdleCallback' in window) requestIdleCallback(run, { timeout: 4000 })
+  else setTimeout(run, 2000)
+}
 
 /*
   Framer Page Transition — 5-block curtain effect:
@@ -199,6 +218,7 @@ function PageTransitions() {
         opacity: phase === 'covered' ? 0.001 : 1,
         transition: phase === 'covered' ? 'none' : 'opacity 0.3s ease',
       }}>
+        <Suspense fallback={<div style={{ minHeight: '100vh', backgroundColor: '#f5f5f5' }} />}>
         <Routes location={displayLocation}>
           <Route path="/" element={<Home />} />
           <Route path="/portfolio/:slug" element={<ProjectDetailPage />} />
@@ -209,6 +229,7 @@ function PageTransitions() {
           <Route path="/contact" element={<ContactPage />} />
           <Route path="/admin" element={<AdminPanel />} />
         </Routes>
+        </Suspense>
       </div>
     </>
   )
@@ -243,7 +264,7 @@ export default function App() {
   useEffect(() => {
     if (!lenisRef.current) return
     if (showLoading) lenisRef.current.stop()
-    else lenisRef.current.start()
+    else { lenisRef.current.start(); prefetchPages() }
   }, [showLoading])
 
   useEffect(() => {

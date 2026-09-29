@@ -31,34 +31,40 @@ export default function LoadingAnimation({ onComplete }) {
   const rafRef = useRef()
   const startRef = useRef()
 
-  // Phase 1: Count from 0 → 100 with eased timing
+  // Phase 1: Count 0 → 100 over ~1s, but only reach 100 once fonts are ready (capped at MAX_WAIT)
   useEffect(() => {
     if (phase !== 'counting') return
 
-    const duration = 3500 // 3.5 seconds to count
+    const duration = 1000 // count time when the page is already ready
+    const MAX_WAIT = 2500 // never block viewers longer than this, even on slow networks
+    let ready = false
+    let holdTimer
+    const fontsReady = document.fonts?.ready ?? Promise.resolve()
+    fontsReady.then(() => { ready = true })
     startRef.current = performance.now()
 
     const animate = (now) => {
       const elapsed = now - startRef.current
       const progress = Math.min(elapsed / duration, 1)
+      const canFinish = ready || elapsed >= MAX_WAIT
 
-      // Ease-out cubic for natural deceleration at the end
+      // Ease-out cubic for natural deceleration at the end; park at 99 until ready
       const eased = 1 - Math.pow(1 - progress, 3)
-      const value = Math.floor(eased * 100)
+      const value = canFinish ? Math.floor(eased * 100) : Math.min(Math.floor(eased * 100), 99)
 
       setCount(value)
 
-      if (progress < 1) {
+      if (progress < 1 || !canFinish) {
         rafRef.current = requestAnimationFrame(animate)
       } else {
         setCount(100)
         // Brief hold at 100% before revealing
-        setTimeout(() => setPhase('revealing'), 600)
+        holdTimer = setTimeout(() => setPhase('revealing'), 200)
       }
     }
 
     rafRef.current = requestAnimationFrame(animate)
-    return () => cancelAnimationFrame(rafRef.current)
+    return () => { cancelAnimationFrame(rafRef.current); clearTimeout(holdTimer) }
   }, [phase])
 
   // Phase 2: After reveal animation completes, notify parent
@@ -66,7 +72,7 @@ export default function LoadingAnimation({ onComplete }) {
     if (phase !== 'revealing') return
 
     // Total reveal duration: longest stagger (block 1 & 5) + transition time
-    const revealDuration = 1800
+    const revealDuration = 1000
     const timer = setTimeout(() => {
       setPhase('done')
       onComplete?.()
@@ -77,8 +83,8 @@ export default function LoadingAnimation({ onComplete }) {
 
   if (phase === 'done') return null
 
-  // Block stagger delays (center out): block3=0ms, block2&4=120ms, block1&5=240ms
-  const staggerDelays = [240, 120, 0, 120, 240]
+  // Block stagger delays (center out): block3=0ms, block2&4=80ms, block1&5=160ms
+  const staggerDelays = [160, 80, 0, 80, 160]
 
   return (
     <div
@@ -115,7 +121,7 @@ export default function LoadingAnimation({ onComplete }) {
               overflow: 'visible',
               // Spring-like easing for the reveal
               transition: phase === 'revealing'
-                ? `height 1.1s cubic-bezier(0.76, 0, 0.24, 1) ${staggerDelays[i]}ms`
+                ? `height 0.8s cubic-bezier(0.76, 0, 0.24, 1) ${staggerDelays[i]}ms`
                 : 'none',
               transformOrigin: 'top center',
             }}
