@@ -154,6 +154,61 @@ function ParallaxMedia({ children, speed = 0.08 }) {
   )
 }
 
+/* ── Instagram reel/post URL → official embed src (whitelisted host + strict id) ── */
+function getInstagramEmbed(rawUrl) {
+  if (!rawUrl) return null
+  let parsed
+  try { parsed = new URL(rawUrl) } catch { return null }
+  if (parsed.protocol !== 'https:' || parsed.hostname.replace(/^www\./, '') !== 'instagram.com') return null
+  const m = parsed.pathname.match(/^\/(reel|reels|p|tv)\/([A-Za-z0-9_-]+)/)
+  if (!m) return null
+  const kind = m[1] === 'reels' ? 'reel' : m[1]
+  return `https://www.instagram.com/${kind}/${m[2]}/embed/`
+}
+
+/* ── Instagram embed — Instagram controls its own layout, so height comes from its
+   MEASURE postMessage instead of the admin aspect ratio (which would crop it) ── */
+function InstagramEmbed({ src }) {
+  const iframeRef = useRef()
+  const [height, setHeight] = useState(720) // close to a reel embed at 400px wide, until Instagram reports
+  const [active, setActive] = useState(false)
+  const isTouch = typeof window !== 'undefined' && window.matchMedia('(hover: none)').matches
+
+  useEffect(() => {
+    function onMessage(e) {
+      if (e.origin !== 'https://www.instagram.com' || e.source !== iframeRef.current?.contentWindow) return
+      let data = e.data
+      if (typeof data === 'string') { try { data = JSON.parse(data) } catch { return } }
+      const h = Number(data?.details?.height)
+      if (data?.type === 'MEASURE' && h > 100 && h < 3000) setHeight(Math.ceil(h))
+    }
+    window.addEventListener('message', onMessage)
+    return () => window.removeEventListener('message', onMessage)
+  }, [])
+
+  return (
+    <div
+      style={{ position: 'relative', width: 'min(100%, 400px)', margin: '0 auto', borderRadius: '16px', overflow: 'hidden', backgroundColor: '#fff', flexShrink: 0 }}
+      onMouseLeave={() => setActive(false)}
+    >
+      <iframe
+        ref={iframeRef}
+        src={src}
+        title="Instagram video"
+        scrolling="no"
+        allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"
+        allowFullScreen
+        loading="lazy"
+        style={{ width: '100%', height: `${height}px`, border: 'none', display: 'block' }}
+      />
+      {/* Same scroll shield as YouTube embeds on desktop; skipped on touch so one tap plays */}
+      {!active && !isTouch && (
+        <div onClick={() => setActive(true)} style={{ position: 'absolute', inset: 0, cursor: 'pointer', zIndex: 1 }} />
+      )}
+    </div>
+  )
+}
+
 /* ── Video item with PLAY badge ── */
 function VideoItem({ url, embedUrl, aspectRatio, animation, delay }) {
   const [playing, setPlaying] = useState(false)
@@ -162,6 +217,9 @@ function VideoItem({ url, embedUrl, aspectRatio, animation, delay }) {
   // Real dimensions from the file win over the admin-set label, so a mislabelled video is never cropped
   const [naturalRatio, setNaturalRatio] = useState(null)
   const ratio = naturalRatio || getRatio(aspectRatio)
+
+  const instagramSrc = getInstagramEmbed(embedUrl)
+  if (instagramSrc) return <InstagramEmbed src={instagramSrc} />
 
   // Extract YouTube/Vimeo embed src — whitelist only trusted domains
   function getEmbedSrc(rawUrl) {
@@ -187,6 +245,9 @@ function VideoItem({ url, embedUrl, aspectRatio, animation, delay }) {
 
   const embedSrc = getEmbedSrc(embedUrl)
   const isTouch = typeof window !== 'undefined' && window.matchMedia('(hover: none)').matches
+
+  // No uploaded file and no playable link → render nothing rather than a dead PLAY box
+  if (!embedSrc && !url) return null
 
   const mediaContent = embedSrc ? (
     /* ── Embed player (YouTube/Vimeo) ── */
@@ -720,7 +781,8 @@ export default function ProjectDetailPage() {
   const nextProject = currentIndex < allProjects.length - 1 ? allProjects[currentIndex + 1] : null
 
   const gallery = (project.gallery_images || [])
-  const videos = (project.gallery_videos || [])
+  // Drop empty video slots (no upload, no link) so they never render a blank box or an empty "Behind the Lens"
+  const videos = (project.gallery_videos || []).filter(v => v?.url || v?.embed_url)
   const animation = project.gallery_animation || 'parallax'
   const isFullBleed = project.image_display_style === 'circular' || project.image_display_style === 'infinite'
 
@@ -849,13 +911,14 @@ export default function ProjectDetailPage() {
       {videos.length > 0 && (() => {
         // Group consecutive portrait videos side-by-side (max 4 per row), landscape solo
         const PORTRAIT_VID = new Set(['9:16', '2:3', '3:4', '4:5', '9/16', '2/3', '3/4', '4/5'])
+        // Instagram embeds are vertical cards regardless of the admin ratio — group them like portrait
+        const isPortraitVid = v => PORTRAIT_VID.has(v.aspect_ratio || '16:9') || !!getInstagramEmbed(v.embed_url)
         const groups = []
         let vi = 0
         while (vi < videos.length) {
-          const ar = videos[vi].aspect_ratio || '16:9'
-          if (PORTRAIT_VID.has(ar)) {
+          if (isPortraitVid(videos[vi])) {
             const row = []
-            while (vi < videos.length && PORTRAIT_VID.has(videos[vi].aspect_ratio || '16:9') && row.length < 4) {
+            while (vi < videos.length && isPortraitVid(videos[vi]) && row.length < 4) {
               row.push(videos[vi++])
             }
             groups.push({ portrait: true, items: row })
