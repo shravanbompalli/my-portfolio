@@ -238,6 +238,17 @@ function Input({ label, value, onChange, multiline, placeholder, type, onKeyDown
   )
 }
 
+/* ── Which embed player a gallery-video link maps to (mirrors ProjectDetailPage whitelist) ── */
+function embedKind(rawUrl) {
+  let u
+  try { u = new URL(rawUrl) } catch { return null }
+  const host = u.hostname.replace(/^www\./, '')
+  if (host === 'youtube.com' || host === 'youtu.be') return 'youtube'
+  if (host === 'vimeo.com') return 'vimeo'
+  if (host === 'instagram.com' && /^\/(reel|reels|p|tv)\/[A-Za-z0-9_-]+/.test(u.pathname)) return 'instagram'
+  return null
+}
+
 function Btn({ children, onClick, variant = 'primary', small, disabled, fullWidth }) {
   const bg = variant === 'primary' ? accent : variant === 'danger' ? '#dc2626' : variant === 'purple' ? '#a855f7' : '#222'
   return (
@@ -1264,10 +1275,10 @@ export default function AdminPanel() {
                             }}
                           />
                           <div>
-                            <p style={{ fontFamily: '"Geist",sans-serif', fontSize: '10px', color: gray, margin: '0 0 4px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>— OR — YouTube / Vimeo URL</p>
+                            <p style={{ fontFamily: '"Geist",sans-serif', fontSize: '10px', color: gray, margin: '0 0 4px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>— OR — YouTube / Vimeo / Instagram URL</p>
                             <input
                               value={vid.embed_url || ''}
-                              placeholder="https://youtu.be/..."
+                              placeholder="https://youtu.be/... or https://www.instagram.com/reel/..."
                               onChange={e => {
                                 const u = [...projects]
                                 const vids = [...(u[i].gallery_videos || [])]
@@ -1279,9 +1290,15 @@ export default function AdminPanel() {
                               onFocus={e => e.target.style.borderColor = '#a855f7'}
                               onBlur={e => e.target.style.borderColor = border}
                             />
-                            {vid.embed_url && (
-                              <p style={{ fontFamily: '"Geist",sans-serif', fontSize: '10px', color: '#00c200', margin: '4px 0 0' }}>✓ Embed URL set</p>
-                            )}
+                            {vid.embed_url && (() => {
+                              const kind = embedKind(vid.embed_url)
+                              const msg = kind === 'instagram'
+                                ? { color: '#00c200', text: '✓ Instagram link — shown as Instagram\'s own player (aspect ratio is ignored)' }
+                                : kind
+                                  ? { color: '#00c200', text: `✓ ${kind === 'youtube' ? 'YouTube' : 'Vimeo'} link set` }
+                                  : { color: accent, text: '⚠ Not a supported link — use a YouTube, Vimeo or Instagram reel/post URL' }
+                              return <p style={{ fontFamily: '"Geist",sans-serif', fontSize: '10px', color: msg.color, margin: '4px 0 0' }}>{msg.text}</p>
+                            })()}
                           </div>
                         </div>
                         {/* Right col — aspect ratio */}
